@@ -1,49 +1,76 @@
 GrayPlay
 ========
+This project is an attempt to create a simple projection mapping implementation using kinect and a projector, to be used for a theater [play](https://www.facebook.com/ziuaincarenusecumparanimic).
 
-<b>WHAT?</b> <br> interactive projection mapping using kinect and projector done in <b>openframeworks</b> on windows for "buy nothing day" theatre play (https://www.facebook.com/ziuaincarenusecumparanimic) <br>
-(...)
+Development
+-----------
+I'm learning by doing both programming and GitHub. I started this project by using genekogan's [ofxKinectProjectorToolkit](https://github.com/genekogan/ofxKinectProjectorToolkit) 's example (calibration and bodyMapping) to which I am adding things - and see where it leads. 
 
-<b>HOW?</b> <br> started from the example from https://github.com/genekogan/ofxKinectProjectorToolkit (thank you genekogan!) using ofxkinect's freelibnet drivers (.inf) files fom somewhere deep in the ofxKinect folders <br>
-(...) 
+Installation
+------------
+Clone this to the apps folder of your everyday openframework.
+Kinect in windows by means of ofxkinect's freelibnet drivers (.inf) files fom somewhere deep in the ofxKinect folders
 
-<b>DEPENDENCES?</b> <br> addons needed in the ofx's \addons folder (so far)
+####calibrate
+- basically the same calibraton process from [ofxKinectProjectorToolkit](https://github.com/genekogan/ofxKinectProjectorToolkit)
+- will produce a xml.
 
-<ul>
-<li>ofxOpenCv
-<li>ofxCv
-<li>ofxKinect
-<li>ofxSecondWindow
-<li>ofxKinectProjectorToolkit
-<li>ofxUI
-<li>ofURLFileLoader
-</ul>
-+ofxBox2d
+####play
+- based on the example from [ofxKinectProjectorToolkit](https://github.com/genekogan/ofxKinectProjectorToolkit/tree/master/example_bodyMapping)
+- will load the calibration xml
+- will have a control pannel on the first screen
+- will produce the projected composite on a 2nd screen
 
-<b>EXCUSES?</b> because I am totally not a programmer, and I am using github, I pointed the repository to the <i>renamed to GrayPlay</i> openframeworks' myApp folder, where usually I generate folders using the ofx's projectGenerator. The folders are:
+####playbox
+- dev for bringing box2d in the picture
 
-<b>calibrate</b> <br>
-<ul>
-<li>basically the same calibraton process from here - https://github.com/genekogan/ofxKinectProjectorToolkit
-<li>hacked a variable to allow the actual calibration to start (TODO fork and submit pull?)
-<li>will produce a xml.
-</ul>
+####kinect
+-t he default ofxKinect demo, I generally use it to figure out if the kinect does what it should (and also check the capabilities)
 
-<b>play</b> <br>
-<ul>
-<li>based on  the example from here - https://github.com/genekogan/ofxKinectProjectorToolkit/tree/master/example_bodyMapping
-<li>will load the calibration xml
-<li>first window a control panel for the kinect/projector (gui)
-<li>save presets (f1-f4) / load presets (1-4)
-<li>show the mapping vs actual in the 4th square
-</ul>
+Usage
+-----
+Start calibration app and follow it up by moving the chessboard around and in depth until mapped. Copy the produced xml file to the play app. Start play app, use the first screen as the control pannel and the second screen as the life performance. 
 
-<b>playbox</b> <br>
-<ul>
-<li>bringing box2d in the scene
-</ul>
+Key | Function
+:--- | :---
+f1-f4 | Save current parameters to a file
+1-4 | Load parameters from file
+p | Hide elements in the 1st window (production mode)
 
-<b>kinect</b> <br>
-<ul>
-<li>the default ofxKinect demo, I generally use it to figure out if the kinect does what it should (and also check the capabilities)
-</ul>
+Dependencies
+------------
+Addons for openframeworks.
+- ofxXmlSettings
+- ofxOpenCv
+- ofxCv
+- ofxKinect
+- ofxSecondWindow
+- ofxKinectProjectorToolkit
+- ofxUI
+- ofURLFileLoader
+and possibly
+- ofxBox2d
+
+Compatibility
+------------
+Tested with 0.8.3 (win8, win8.1)
+
+Known issues
+------------
+I'm learning so this will be very messy.
+
+Version history
+---------------
+
+### Version 0.1.1 (2014-09-10):
+Some copy/paste programming to allow 'presets' to show as proof of concept (currently just color change). 
+ - Formatted README
+ - Added a 4th screen in the control pannel of play, showing the life performance in control pannel and the real-life kinect
+ - Added presets (f1-f4,1-4)
+ - Cloned play to playbox and added
+
+### Version 0.1 (2014-09-01):
+First version, mostly clones and succesful compliles using visual studio.
+ - Cloned calibration and made it work (adding testing=false)
+ - Cloned body mapping example 
+ - Cloned kinect default example from ofxKinect to be used as a default hw check if kinect works.
