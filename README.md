@@ -24,26 +24,26 @@ GrayPlay
 
 <b>calibrate</b> <br>
 <ul>
-<li>- basically the same calibraton process from here - https://github.com/genekogan/ofxKinectProjectorToolkit
-<li>- hacked a variable to allow the actual calibration to start (TODO fork and submit pull?)
-<li>- will produce a xml.
+<li>basically the same calibraton process from here - https://github.com/genekogan/ofxKinectProjectorToolkit
+<li>hacked a variable to allow the actual calibration to start (TODO fork and submit pull?)
+<li>will produce a xml.
 </ul>
 
 <b>play</b> <br>
 <ul>
-<li>- based on  the example from here - https://github.com/genekogan/ofxKinectProjectorToolkit/tree/master/example_bodyMapping
-<li>- will load the calibration xml
-<li>- first window a control panel for the kinect/projector (gui)
-<li>-save presets (f1-f4) / load presets (1-4)
-<li>-show the mapping vs actual in the 4th square
+<li>based on  the example from here - https://github.com/genekogan/ofxKinectProjectorToolkit/tree/master/example_bodyMapping
+<li>will load the calibration xml
+<li>first window a control panel for the kinect/projector (gui)
+<li>save presets (f1-f4) / load presets (1-4)
+<li>show the mapping vs actual in the 4th square
 </ul>
 
 <b>playbox</b> <br>
 <ul>
-<li>-bringing box2d in the scene
+<li>bringing box2d in the scene
 </ul>
 
 <b>kinect</b> <br>
 <ul>
-<li>- the default ofxKinect demo, I generally use it to figure out if the kinect does what it should (and also check the capabilities)
+<li>the default ofxKinect demo, I generally use it to figure out if the kinect does what it should (and also check the capabilities)
 </ul>
