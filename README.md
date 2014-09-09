@@ -25,7 +25,7 @@ Kinect in windows by means of ofxkinect's freelibnet drivers (.inf) files fom so
 - dev for bringing box2d in the picture
 
 ####kinect
--t he default ofxKinect demo, I generally use it to figure out if the kinect does what it should (and also check the capabilities)
+- the default ofxKinect demo, I generally use it to figure out if the kinect does what it should (and also check the capabilities)
 
 Usage
 -----
@@ -33,7 +33,7 @@ Start calibration app and follow it up by moving the chessboard around and in de
 
 Key | Function
 :--- | :---
-f1-f4 | Save current parameters to a file
+F1-F4 | Save current parameters to a file
 1-4 | Load parameters from file
 p | Hide elements in the 1st window (production mode)
 
