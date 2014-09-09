@@ -8,8 +8,8 @@ I'm learning by doing both programming and GitHub. I started this project by usi
 
 Installation
 ------------
-Clone this to the apps folder of your everyday openframework.
-Kinect in windows by means of ofxkinect's freelibnet drivers (.inf) files fom somewhere deep in the ofxKinect folders
+Clone this to the apps folder of your everyday openframework. <br>
+Plug kinect in, update drivers using (.inf) files fom addons\ofxKinect\libs\libfreenect\platform\windows\inf<br>
 
 ####calibrate
 - basically the same calibraton process from [ofxKinectProjectorToolkit](https://github.com/genekogan/ofxKinectProjectorToolkit)
