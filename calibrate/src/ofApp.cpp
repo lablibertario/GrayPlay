@@ -16,6 +16,7 @@ void ofApp::setup(){
     fboChessboard.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA);
     secondWindow.setup("chessboard", ofGetScreenWidth(), 0, fboChessboard.getWidth(), fboChessboard.getHeight(), true);
 
+	//added this because otherwise it will never go into the positioning the chessboard in the draw() function
 	testing=false;
 }
 
