@@ -311,6 +311,7 @@ void ofApp::draw_proj() {
 				ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
 				);
 		}
+		movingShapeLine.simplify();
 	}
     	
 	// draw the moving shape
