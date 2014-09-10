@@ -1,5 +1,9 @@
 #include "ofApp.h"
 
+static bool shouldRemove(ofPtr<ofxBox2dBaseShape>shape) {
+	return !ofRectangle(0, -200, ofGetWidth(), ofGetHeight()+200).inside(shape.get()->getPosition());
+}
+
 void ofApp::setup() {
 
 	//coming from box2d
@@ -41,7 +45,11 @@ void ofApp::setup() {
 	maxDistance = 32;
 	preset=1;
 	isProductive=false;
-	isSandbox=true;
+	isSandbox=false;
+	isCtrlKinect=true;
+	isCaptured=false;
+	isBroken=true;
+	isRaining=false;
 
     // setup gui that's why (must be a way to set them up directly in the gui hmmmm)
     gui = new ofxUICanvas();
@@ -74,6 +82,9 @@ void ofApp::setup() {
 	gui->addSpacer();
 	gui->addLabelToggle("isProductive", &isProductive);
 	gui->addLabelToggle("isSandbox", &isSandbox);
+	gui->addLabelToggle("isCtrlKinect", &isCtrlKinect);
+	gui->addLabelToggle("isBroken", &isBroken);
+	gui->addLabelToggle("isRaining", &isRaining);
 	gui->addSlider("preset", 1, 4, &preset);
 
 	// enable autoload
@@ -90,7 +101,14 @@ void ofApp::update() {
 	//show framerate
 	ofSetWindowTitle( ofToString( ofGetFrameRate(),1 ) );
 
-	// todo: should remove stuff first, before updating box2d
+	if (isRaining) { update_rain();	}
+
+	//cleanup
+	ofRemove(circles, shouldRemove);
+	ofRemove(boxes, shouldRemove);
+	ofRemove(polyShapes, shouldRemove);
+
+	//updating box2d
 	box2d.update();	
 
 	//update the damn thing
@@ -122,15 +140,50 @@ void ofApp::update() {
 	}
 }
 
+void ofApp::update_rain(){
+	// add some circles and boxes every so often
+	if((int)ofRandom(0, 20) == 0) {
+		ofPtr<ofxBox2dCircle> circle = ofPtr<ofxBox2dCircle>(new ofxBox2dCircle);
+		circle.get()->setPhysics(0.3, 0.5, 0.1);
+		circle.get()->setup(box2d.getWorld(), (ofGetWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 30));
+		circles.push_back(circle);
+	}
+	if((int)ofRandom(0, 20) == 0) {
+		ofPtr<ofxBox2dRect> box = ofPtr<ofxBox2dRect>(new ofxBox2dRect);
+		box.get()->setPhysics(0.3, 0.5, 0.1);
+		box.get()->setup(box2d.getWorld(), (ofGetWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 40), ofRandom(10, 40));
+		boxes.push_back(box);
+	}
+
+
+}
+
 void ofApp::draw() {
 	// using two windows is confusing, so i'm trying to break it in 3 :)
 	// stuff that has to happen regardless (why is it not at the update?)
 
 	//draw stuff in the first window only when needed (save speed)
 	if (!isProductive) { draw_ctrl(); }
+	else { draw_debug(); }
 
 	//draw the projector stuff.
 	draw_proj();
+}
+
+void ofApp::draw_debug() {
+	//old skool mood for debug.
+	ofBackground(0); 
+	
+	// some debug information
+	string info = "Production mode\n";
+	info += "Press p to toggle control panel\n";
+	//info += "Press t to break object up into triangles/convex poly: "+string(breakupIntoTriangles?"true":"false")+"\n";
+	info += "Total Contours: "+ofToString(contoursOnscreen)+"\n\n";
+	info += "Total Bodies: "+ofToString(box2d.getBodyCount())+"\n";
+	info += "Total Joints: "+ofToString(box2d.getJointCount())+"\n\n";
+	info += "FPS: "+ofToString(ofGetFrameRate())+"\n";
+	ofSetColor(255);
+	ofDrawBitmapString(info, 300, 50);
 }
 
 void ofApp::draw_ctrl() {
@@ -140,17 +193,22 @@ void ofApp::draw_ctrl() {
 	//old skool mood for ctrl.
 	ofBackground(0); 
 	ofSetColor(255);
-
-	// draw kinectRGB,depth,contours,composite display		
-	ofPushMatrix();  
-	kinect.draw(0, 0); 
-	ofTranslate(640, 0);
-	grayImage.draw(0, 0); 
-	ofTranslate(-640, 480);
-	contourFinder.draw();
-	ofTranslate(640, 0); 
-
 	
+	ofPushMatrix();  
+	if (isCtrlKinect) {
+		// draw kinectRGB,depth,contours,composite display		
+		kinect.draw(0, 0); 
+		ofTranslate(640, 0);
+		grayImage.draw(0, 0); 
+	} else {
+		contourFinder.draw();
+		ofTranslate(640, 0); 
+		draw_ctrl_composite();
+	}
+	ofPopMatrix();
+}
+
+void ofApp::draw_ctrl_composite() {	
 	// draw composite
 	RectTracker& tracker = contourFinder.getTracker();
 	for(int i = 0; i < contourFinder.size(); i++) {
@@ -181,17 +239,14 @@ void ofApp::draw_ctrl() {
 		ofFill();
 		ofSetColor(backgroundColor,127); // backgroundColor // blobColors[0] //label % 11 // man that's awesome this be the line that was the most awe from awesome. because colors, so fuck off.
 		for (int j=0; j<points.size(); j++) {
-			ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
-			ofVec2f pp = kpt.getProjectedPoint(wp);          
 			// this gentleman right here is the real shit
 			ofVertex( points[j].x, points[j].y);
 		}
 		ofEndShape();  
 		ofDisableAlphaBlending();  
 	}
-	ofPopMatrix(); 
 }
-
+	
 void ofApp::draw_proj() {
 	// welcome to the second screen, the projector/production/play
 	// one day this will be the main screen after some kind of network pipeline with the ctrl
@@ -199,55 +254,70 @@ void ofApp::draw_proj() {
 	//projector
     secondWindow.begin();
 
-	//change of mood
-	ofBackgroundHex(0xfdefc2);
+	//change of mood naah
+	//ofBackgroundHex(0xfdefc2);
+	ofBackground(0);
 
 	if (isSandbox) { draw_proj_sandbox(); };
 
 	//now let's see what the hack can we do with boxes and polygons and what not.
 	//CV meagic (abracadabric)
 	RectTracker& tracker = contourFinder.getTracker();
+	
+	//get a variable for debug
+	contoursOnscreen = contourFinder.size();
+    
+	// for all countours
+	for(int i = 0; i < contourFinder.size(); i++) {
+		vector<cv::Point> points = contourFinder.getContour(i);
+		int label = contourFinder.getLabel(i);
 
-    for(int i = 0; i < contourFinder.size(); i++) {
-        vector<cv::Point> points = contourFinder.getContour(i);
-        int label = contourFinder.getLabel(i);
-        ofPoint center = toOf(contourFinder.getCenter(i));
-		int age = tracker.getAge(label);
-
-
-		//float w = ofRandom(20, 30);
-		//float h = ofRandom(20, 30);
-		//boxes.push_back(ofPtr<ofxBox2dRect>(new ofxBox2dRect));
-		//boxes.back().get()->setPhysics(3.0, 0.53, 0.1);
-		//boxes.back().get()->setup(box2d.getWorld(), center.x, center.y, w, h);
-
-
-        // map contour using calibration and draw to main window
-        ofBeginShape();
-        ofFill();
-		ofSetColor(backgroundColor); // backgroundColor // blobColors[0] //label % 11
-        for (int j=0; j<points.size(); j++) {
-            ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
-            ofVec2f pp = kpt.getProjectedPoint(wp);         
+		// draw contours using kinectoolkit conversion
+		ofBeginShape();
+		ofFill();
+		ofSetColor(backgroundColor); 
+		for (int j=0; j<points.size(); j++) {
+			ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
+			ofVec2f pp = kpt.getProjectedPoint(wp);         
 			// this gentleman right here is the projection
-			  ofVertex(
-                       ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
-                       ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
-                      );
-        }
-        ofEndShape(); 
-    }    
+			ofVertex(
+				ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+				ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
+				);
+		}
+		ofEndShape(); 
+	}    
     	
+	// draw boxes
 	for(int i=0; i<boxes.size(); i++) {
 		ofFill();
 		ofSetHexColor(0xBF2545);
 		boxes[i].get()->draw();
 	}
 
+	// some circles :)
+	for (int i=0; i<circles.size(); i++) {
+		ofFill();
+		ofSetHexColor(0xc0dd3b);
+		circles[i].get()->draw();
+	}
+
+	//draw the shape 
+	ofSetHexColor(0x444342);
+	ofFill();
+	shape.draw();
+	
+	//draw the polishape
+	ofSetHexColor(0xBF2545);
+	ofFill();
+	for (int i=0; i<polyShapes.size(); i++) {
+		polyShapes[i].get()->draw();        
+        //ofCircle(polyShapes[i].get()->getPosition(), 3);  //a small circle inside the triangle so cute but NO.
+	}	
+
 	// draw the ground
 	box2d.drawGround();
 	secondWindow.end();
-
 }
 
 void ofApp::draw_proj_sandbox() {
@@ -276,6 +346,68 @@ void ofApp::draw_proj_sandbox() {
 	ofVertex(250,25);
 	ofEndShape();
 	ofPopMatrix(); 
+
+}
+
+void ofApp::interactShape()
+{
+	//called on pressing b, does a run through the countours picks last one (pfff) and shapes it then breaks it!.
+
+	// for all countours
+	for(int i = 0; i < contourFinder.size(); i++) {
+		vector<cv::Point> points = contourFinder.getContour(i);
+		shape.clear();  
+		//for all points of each contour
+		for (int j=0; j<points.size(); j++) {
+			ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
+			ofVec2f pp = kpt.getProjectedPoint(wp);         
+			// add 
+			shape.addVertex( 
+				ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+				ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
+				);
+		}
+	}
+
+	if (isBroken) {
+		// first simplify the shape
+		shape.simplify();
+
+		// save the outline of the shape
+		ofPolyline outline = shape;
+
+		// resample shape
+		ofPolyline resampled = shape.getResampledBySpacing(25);
+
+		// trangleate the shape, return am array of traingles
+		vector <TriangleShape> tris = triangulatePolygonWithOutline(resampled, outline);
+
+		// add some random points inside
+		addRandomPointsInside(shape, 255);
+
+		// now loop through all the trainles and make a box2d triangle
+		for (int i=0; i<tris.size(); i++) {
+			ofPtr<ofxBox2dPolygon> triangle = ofPtr<ofxBox2dPolygon>(new ofxBox2dPolygon);
+			triangle.get()->addTriangle(tris[i].a, tris[i].b, tris[i].c);
+			triangle.get()->setPhysics(1.0, 0.3, 0.3);
+			triangle.get()->create(box2d.getWorld());
+			polyShapes.push_back(triangle);
+		}
+	} else {
+		// create a poly shape with the max verts allowed
+        // and the get just the convex hull from the shape
+        shape = shape.getResampledByCount(b2_maxPolygonVertices);
+        shape = getConvexHull(shape);
+        
+        ofPtr<ofxBox2dPolygon> poly = ofPtr<ofxBox2dPolygon>(new ofxBox2dPolygon);
+        poly.get()->addVertices(shape.getVertices());
+        poly.get()->setPhysics(1.0, 0.3, 0.3);
+        poly.get()->create(box2d.getWorld());
+        polyShapes.push_back(poly);
+
+	}
+	// done with shape clear it now
+	shape.clear();
 
 }
 
@@ -316,13 +448,23 @@ void ofApp::keyPressed(int key){
 		case 'p':
 			isProductive=!isProductive;
 			break;
-
-		case 'a':
+		case 'o':
+			isCtrlKinect=!isCtrlKinect;
+			break;
+		case 's':
 			isSandbox=!isSandbox;
 			break;
+		case 'b':
+			// iscapture is false, b was pressed
+			interactShape();
+			isCaptured=true;
+			break;
 
-		case 'f':
-			ofToggleFullscreen();
+		case 'c':
+			shape.clear();
+			polyShapes.clear();
+			circles.clear();
+			boxes.clear();
 			break;
         			
         case '1':
