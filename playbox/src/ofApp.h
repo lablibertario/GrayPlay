@@ -29,7 +29,9 @@ public:
 	void setup();
 	void update();
 	void draw();
+	void draw_ctrl();
 	void draw_proj();
+	void draw_proj_sandbox();
 	void exit();
 	void keyPressed(int key);
 //    void keyReleased(int key);
@@ -61,15 +63,19 @@ public:
 	float						igrec;
 
 	bool						isProductive;
+	bool						isSandbox;
+
+	float							preset;
 
 	void urlResponse(ofHttpResponse & response);
 	
 	ofImage img;
 	bool loading;
 
+	ofPolyline							shape;
 	ofxBox2d                            box2d;			  //	the box2d world
 	vector    <ofPtr<ofxBox2dCircle> >	circles;		  //	default box2d circles
 	vector	  <ofPtr<ofxBox2dRect> >	boxes;			  //	defalut box2d rects
-
+	vector	  <ofPtr<ofxBox2dPolygon> >	polyShapes;		  //    shapes from kinect
 	
 };
