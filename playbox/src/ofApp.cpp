@@ -50,6 +50,7 @@ void ofApp::setup() {
 	isCaptured=false;
 	isBroken=true;
 	isRaining=false;
+	isInteractive=false;
 
     // setup gui that's why (must be a way to set them up directly in the gui hmmmm)
     gui = new ofxUICanvas();
@@ -85,6 +86,7 @@ void ofApp::setup() {
 	gui->addLabelToggle("isCtrlKinect", &isCtrlKinect);
 	gui->addLabelToggle("isBroken", &isBroken);
 	gui->addLabelToggle("isRaining", &isRaining);
+	gui->addLabelToggle("isInteractive", &isInteractive);
 	gui->addSlider("preset", 1, 4, &preset);
 
 	// enable autoload
@@ -110,6 +112,14 @@ void ofApp::update() {
 
 	//updating box2d
 	box2d.update();	
+
+	//man this is taxing
+	if (isInteractive) {
+		//take the moving shape lines and make a movigshape with it, then create it in the getworld (will be always updated in draw? then again created here my god this is confusing.. anyways)
+		movingShape.clear();
+		movingShape.addVertexes(movingShapeLine);
+		movingShape.create(box2d.getWorld());
+	}
 
 	//update the damn thing
     kinect.update();    
@@ -257,7 +267,6 @@ void ofApp::draw_proj() {
 	//change of mood naah
 	//ofBackgroundHex(0xfdefc2);
 	ofBackground(0);
-
 	if (isSandbox) { draw_proj_sandbox(); };
 
 	//now let's see what the hack can we do with boxes and polygons and what not.
@@ -267,7 +276,7 @@ void ofApp::draw_proj() {
 	//get a variable for debug
 	contoursOnscreen = contourFinder.size();
     
-	// for all countours
+	// draw contours projected
 	for(int i = 0; i < contourFinder.size(); i++) {
 		vector<cv::Point> points = contourFinder.getContour(i);
 		int label = contourFinder.getLabel(i);
@@ -287,7 +296,28 @@ void ofApp::draw_proj() {
 		}
 		ofEndShape(); 
 	}    
+
+	if (isInteractive) {
+	//draw interactive contour in box2d 
+	for(int i = 0; i < contourFinder.size(); i++) {
+		vector<cv::Point> points = contourFinder.getContour(i);
+		movingShapeLine.clear(); //fix the duck this already, we need a contour selector jeezas!
+		for (int j=0; j<points.size(); j++) {
+			ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
+			ofVec2f pp = kpt.getProjectedPoint(wp);         
+			// this gentleman right here is the projection
+			movingShapeLine.addVertex(
+				ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+				ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
+				);
+		}
+	}
     	
+	// draw the moving shape
+	movingShape.updateShape();
+	movingShape.draw();
+	}
+
 	// draw boxes
 	for(int i=0; i<boxes.size(); i++) {
 		ofFill();
@@ -302,10 +332,10 @@ void ofApp::draw_proj() {
 		circles[i].get()->draw();
 	}
 
-	//draw the shape 
+	//draw the exploding shape 
 	ofSetHexColor(0x444342);
 	ofFill();
-	shape.draw();
+	explodingShapeLine.draw();
 	
 	//draw the polishape
 	ofSetHexColor(0xBF2545);
@@ -317,6 +347,8 @@ void ofApp::draw_proj() {
 
 	// draw the ground
 	box2d.drawGround();
+	
+	//close secondwindow
 	secondWindow.end();
 }
 
@@ -356,13 +388,13 @@ void ofApp::interactShape()
 	// for all countours
 	for(int i = 0; i < contourFinder.size(); i++) {
 		vector<cv::Point> points = contourFinder.getContour(i);
-		shape.clear();  
+		explodingShapeLine.clear();  
 		//for all points of each contour
 		for (int j=0; j<points.size(); j++) {
 			ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
 			ofVec2f pp = kpt.getProjectedPoint(wp);         
 			// add 
-			shape.addVertex( 
+			explodingShapeLine.addVertex( 
 				ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
 				ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
 				);
@@ -371,19 +403,19 @@ void ofApp::interactShape()
 
 	if (isBroken) {
 		// first simplify the shape
-		shape.simplify();
+		explodingShapeLine.simplify();
 
 		// save the outline of the shape
-		ofPolyline outline = shape;
+		ofPolyline outline = explodingShapeLine;
 
 		// resample shape
-		ofPolyline resampled = shape.getResampledBySpacing(25);
+		ofPolyline resampled = explodingShapeLine.getResampledBySpacing(25);
 
 		// trangleate the shape, return am array of traingles
 		vector <TriangleShape> tris = triangulatePolygonWithOutline(resampled, outline);
 
 		// add some random points inside
-		addRandomPointsInside(shape, 255);
+		addRandomPointsInside(explodingShapeLine, 255);
 
 		// now loop through all the trainles and make a box2d triangle
 		for (int i=0; i<tris.size(); i++) {
@@ -396,18 +428,17 @@ void ofApp::interactShape()
 	} else {
 		// create a poly shape with the max verts allowed
         // and the get just the convex hull from the shape
-        shape = shape.getResampledByCount(b2_maxPolygonVertices);
-        shape = getConvexHull(shape);
+        explodingShapeLine = explodingShapeLine.getResampledByCount(b2_maxPolygonVertices);
+        explodingShapeLine = getConvexHull(explodingShapeLine);
         
         ofPtr<ofxBox2dPolygon> poly = ofPtr<ofxBox2dPolygon>(new ofxBox2dPolygon);
-        poly.get()->addVertices(shape.getVertices());
+        poly.get()->addVertices(explodingShapeLine.getVertices());
         poly.get()->setPhysics(1.0, 0.3, 0.3);
         poly.get()->create(box2d.getWorld());
         polyShapes.push_back(poly);
-
 	}
 	// done with shape clear it now
-	shape.clear();
+	explodingShapeLine.clear();
 
 }
 
@@ -461,7 +492,9 @@ void ofApp::keyPressed(int key){
 			break;
 
 		case 'c':
-			shape.clear();
+			explodingShapeLine.clear();
+			movingShapeLine.clear();
+			movingShape.clear();
 			polyShapes.clear();
 			circles.clear();
 			boxes.clear();

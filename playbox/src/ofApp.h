@@ -71,6 +71,7 @@ public:
 	bool						isCaptured;   //capturing kinect shape into the 2d world
 	bool						isBroken;	// break triangles?
 	bool						isRaining; // trhow boxes from the sky
+	bool						isInteractive; // interacting with the elements
 
 	float						preset;
 	float						contoursOnscreen;
@@ -80,10 +81,12 @@ public:
 	ofImage img;
 	bool loading;
 
-	ofxBox2d                            box2d;			  //	the box2d world
+	ofxBox2d                            box2d;						//	the box2d world
 	
-	ofPolyline							shape;			// for capture and explode
-	ofPolyline							movingShape;   //  for moving blobs
+	ofPolyline							explodingShapeLine;			// for capture and explode
+	ofPolyline							movingShapeLine;			// for moving
+
+	ofxBox2dEdge                        movingShape;			//	the box2d edge/line shape (min 2 points)
 
 	vector	  <ofPtr<ofxBox2dPolygon> >	polyShapes;		  //    pieces of shape maybe eh?
 
