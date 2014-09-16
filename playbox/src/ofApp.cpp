@@ -185,12 +185,17 @@ void ofApp::draw_debug() {
 	ofBackground(0); 
 	
 	// some debug information
-	string info = "Production mode\n";
-	info += "Press p to toggle control panel\n";
-	//info += "Press t to break object up into triangles/convex poly: "+string(breakupIntoTriangles?"true":"false")+"\n";
-	info += "Total Contours: "+ofToString(contoursOnscreen)+"\n\n";
+	string info = "Keys:\n";
+	info += "(p) "+string(isProductive?"Production":"Edit")+"\n";
+	info += "(o) "+string(isCtrlKinect?"Kinect":"OpenCV")+"\n";
+	info += "(s) "+string(isSandbox?"Sandbox":"Normal")+"\n";
+	info += "(i) "+string(isInteractive?"Box2d":"Shape")+"\n";
+	info += "(r) "+string(isRaining?"Raining":"Clear")+"\n";
+	info += "(b) to break shape\n\n";
+
+	info += "Total Contours: "+ofToString(contoursOnscreen)+"\n";
 	info += "Total Bodies: "+ofToString(box2d.getBodyCount())+"\n";
-	info += "Total Joints: "+ofToString(box2d.getJointCount())+"\n\n";
+	info += "Total Joints: "+ofToString(box2d.getJointCount())+"\n";
 	info += "FPS: "+ofToString(ofGetFrameRate())+"\n";
 	ofSetColor(255);
 	ofDrawBitmapString(info, 300, 50);
@@ -297,7 +302,7 @@ void ofApp::draw_proj() {
 		ofEndShape(); 
 	}    
 
-	if (isInteractive) {
+	if (isInteractive) { //todo fix the damn contours and make a draw interactive every x frames to make more sense of what contours actually do.
 	//draw interactive contour in box2d 
 	for(int i = 0; i < contourFinder.size(); i++) {
 		vector<cv::Point> points = contourFinder.getContour(i);
@@ -485,6 +490,12 @@ void ofApp::keyPressed(int key){
 			break;
 		case 's':
 			isSandbox=!isSandbox;
+			break;
+		case 'i':
+			isInteractive=!isInteractive;
+			break;
+	    case 'r':
+			isRaining=!isRaining;
 			break;
 		case 'b':
 			// iscapture is false, b was pressed
