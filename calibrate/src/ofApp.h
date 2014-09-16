@@ -9,8 +9,8 @@
 
 
 // this must match the display resolution of your projector
-#define PROJECTOR_RESOLUTION_X 1920
-#define PROJECTOR_RESOLUTION_Y 1080
+#define PROJECTOR_RESOLUTION_X 1366
+#define PROJECTOR_RESOLUTION_Y 768
 
 
 class ofApp : public ofBaseApp
