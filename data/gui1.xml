@@ -1,0 +1,90 @@
+<Widget>
+    <Kind>4</Kind>
+    <Name>nearThresh</Name>
+    <Value>222.339904785</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>farThresh</Name>
+    <Value>144.458129883</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>minArea</Name>
+    <Value>3423.645263672</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>maxArea</Name>
+    <Value>78177.343750000</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>threshold</Name>
+    <Value>21.482759476</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>persistence</Name>
+    <Value>22.945812225</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>maxDistance</Name>
+    <Value>46.354679108</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>x</Name>
+    <Value>0.000000000</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>y</Name>
+    <Value>0.000000000</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>red</Name>
+    <Value>255.000000000</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>green</Name>
+    <Value>255.000000000</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>blue</Name>
+    <Value>0.000000000</Value>
+</Widget>
+<Widget>
+    <Kind>17</Kind>
+    <Name>isProductive</Name>
+    <Value>0</Value>
+</Widget>
+<Widget>
+    <Kind>17</Kind>
+    <Name>isSandbox</Name>
+    <Value>0</Value>
+</Widget>
+<Widget>
+    <Kind>17</Kind>
+    <Name>isCtrlKinect</Name>
+    <Value>1</Value>
+</Widget>
+<Widget>
+    <Kind>17</Kind>
+    <Name>isBroken</Name>
+    <Value>1</Value>
+</Widget>
+<Widget>
+    <Kind>17</Kind>
+    <Name>isRaining</Name>
+    <Value>0</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>preset</Name>
+    <Value>1.000000000</Value>
+</Widget>
