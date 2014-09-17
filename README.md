@@ -1,6 +1,6 @@
 GrayPlay
 ========
-This project is an attempt to create a simple projection mapping implementation using kinect and a projector, to be used for a theater [play](https://www.facebook.com/ziuaincarenusecumparanimic).
+This project is an attempt in [openframeworks](http://www.openframeworks.cc/) to create a simple projection mapping implementation using kinect and a projector, to be used for a theater [play](https://www.facebook.com/ziuaincarenusecumparanimic).
 
 Development
 -----------
@@ -13,8 +13,6 @@ Plug kinect in, update drivers using (.inf) files fom addons\ofxKinect\libs\libf
 
 Usage
 -----
-Start calibration app and follow it up by moving the chessboard around and in depth until mapped. 
-
 ####calibrate
 - basically the same calibraton process from [ofxKinectProjectorToolkit](https://github.com/genekogan/ofxKinectProjectorToolkit)
 - will produce a xml.
@@ -23,19 +21,20 @@ Copy the produced xml file to the playbox bin folder.
 
 ####playbox
 - uses ofxBox2d
-- loads calibration xml
-- control panel first screen
+- loads calibration xml, presets
+- control panel first screen (keys)
 - projection screen 
+- explode, interact shape, rain boxes (box2d)
 
 Key | Function
 :--- | :---
 F1-F4 | Save current parameters to a file
 1-4 | Load parameters from file
 p | Hide elements in the 1st window (production mode)
-o | Switch between the Kinect views on the control panel
-b | "Breaks" the last shape into 2dBox physics triangles
+o | Adds a debug projection mapping in the control panel 
+b | "Breaks" the 1st contour into 2dBox physics triangles (explode)
 c | Clears all 2dbox stuff
-i  | interface "interactive" flag makes the last shape interactive in 2dBox world
+i  | 1st contour interactive in 2dBox world
 r  | interface "raining" flag makes 2dbox cicles and boxes fall from the sky
 
 
@@ -49,8 +48,9 @@ Addons for openframeworks.
 - ofxSecondWindow
 - ofxKinectProjectorToolkit
 - ofxUI
+and
 - ofURLFileLoader
-- ofxBox2d (used only for playbox)
+- ofxBox2d 
 
 Compatibility
 ------------
