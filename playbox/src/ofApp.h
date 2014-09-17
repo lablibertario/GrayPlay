@@ -30,14 +30,14 @@ public:
 	void update();
 	void update_rain();
 	void draw();
-	void draw_ctrl();
-	void draw_ctrl_composite();
-	void draw_debug();
-	void draw_proj();
-	void draw_proj_sandbox();
+	void drawCtrl();
+	void drawDebug();
+	void drawProj();
+	void drawContours(int width,int height, bool debugProjector);
+	void drawProjSandbox();
 	void exit();
 	void keyPressed(int key);
-	void interactShape();
+	void explodeShape();
 
 	ofxSecondWindow             secondWindow;
     
@@ -66,15 +66,22 @@ public:
 	float						igrec;
 
 	bool						isProductive;
-	bool						isSandbox;
-	bool						isCtrlKinect; //chose the control panel view (kinect depth/rgb | opencv / projector)
-	bool						isCaptured;   //capturing kinect shape into the 2d world
+	bool						isContours;
+	bool						isCtrlComposite; //Compile composite image with synced projector in the control panel
 	bool						isBroken;	// break triangles?
 	bool						isRaining; // trhow boxes from the sky
 	bool						isInteractive; // interacting with the elements
+	bool						isExplosion; //used for DURING the explosion
+	bool						isExplosionStart; 
+	bool						isExplosionEnd; 
+	bool						isGround; //box2d bottom
+	
+	float						timer1,timer2;
+
 
 	float						preset;
 	float						contoursOnscreen;
+	float						contourTimer;
 
 	void urlResponse(ofHttpResponse & response);
 	
@@ -88,8 +95,9 @@ public:
 
 	ofxBox2dEdge                        movingShape;			//	the box2d edge/line shape (min 2 points)
 
-	vector	  <ofPtr<ofxBox2dPolygon> >	polyShapes;		  //    pieces of shape maybe eh?
+	//vector	 <ofPtr<ofxBox2dEdge> >		movingShapes;		//to be used when multiple contours are interactive
 
+	vector	  <ofPtr<ofxBox2dPolygon> >	polyShapes;		  //    pieces of shape maybe eh?
 	vector    <ofPtr<ofxBox2dCircle> >	circles;		  //	default box2d circles
 	vector	  <ofPtr<ofxBox2dRect> >	boxes;			  //	defalut box2d rects
 	
