@@ -80,6 +80,8 @@ public:
 
 
 	float						preset;
+	int							contourSelected;
+
 	float						contoursOnscreen;
 	float						contourTimer;
 
