@@ -54,6 +54,7 @@ void ofApp::setup() {
 	maxDistance = 32;
 	preset=1;
 	contourTimer=0;
+	gradientPhase=0.01f;
 
     // setup gui that's why (must be a way to set them up directly in the gui hmmmm)
     gui = new ofxUICanvas();
@@ -90,7 +91,8 @@ void ofApp::setup() {
 	gui->addLabelToggle("isBroken", &isBroken);
 	gui->addLabelToggle("isExplosion", &isExplosion);
 	gui->addSpacer();
-	gui->addSlider("contourTimer", 0, 2000, &contourTimer); //no ideea how to make a radio button
+	gui->addSlider("contourTimer", 0, 2000, &contourTimer); //how fast to refresh interactive shape
+	gui->addSlider("gradientPhase", 0.00f, 0.2f, &gradientPhase); //how fast to loop through the colors
 	;
 	//gui->addLabel("x,y");
 	//gui->addSlider("x", 0, PROJECTOR_RESOLUTION_X, &ics);
@@ -122,14 +124,26 @@ void ofApp::setup() {
 	//gradient.addColor( ofColor::white );
 	//gradient.addColor( ofColor::black );
 	
-	//theme 
+	////theme 1
+	//ofColor c;
+	//c.setHex(0xE6E2AF); gradient.addColor(c);
+	//c.setHex(0xA7A37E); gradient.addColor(c);
+	//c.setHex(0xEFECCA); gradient.addColor(c);
+	//c.setHex(0x046380); gradient.addColor(c);
+	//c.setHex(0x002F2F); gradient.addColor(c);
+	//c.setHex(0xE6E2AF); gradient.addColor(c); // <--back to the first one
+	//gradienti=0.0f;
+
+	//theme 2
 	ofColor c;
-	c.setHex(0xE6E2AF); gradient.addColor(c);
-	c.setHex(0xA7A37E); gradient.addColor(c);
-	c.setHex(0xEFECCA); gradient.addColor(c);
-	c.setHex(0x046380); gradient.addColor(c);
-	c.setHex(0x002F2F); gradient.addColor(c);
+	c.setHex(0xFF6138); gradient.addColor(c);
+	c.setHex(0xFFFF9D); gradient.addColor(c);
+	c.setHex(0xBEEB9F); gradient.addColor(c);
+	c.setHex(0x79BD8F); gradient.addColor(c);
+	c.setHex(0x00A388); gradient.addColor(c);
+	c.setHex(0xFF6138); gradient.addColor(c); // <--back to the first one
 	gradienti=0.0f;
+
 
 
 	//setup performance window
@@ -143,7 +157,7 @@ void ofApp::update() {
 
 	//contain and increment gradient
 	if (gradienti > 1.0f) { gradienti = 0.0f; }
-	else { gradienti+=0.01f; }
+	else { gradienti+=gradientPhase; }
 
 	//update the color of the contour to loop gradiently
 	colorContour = gradient.getColorAtPercent(gradienti).getHex();
