@@ -6,3 +6,4 @@ ofxCv
 ofxKinectProjectorToolkit
 ofxSecondWindow
 ofxUI
+ofxColorGradient

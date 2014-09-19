@@ -8,8 +8,7 @@
 #include "ofxKinectProjectorToolkit.h"
 #include "ofxUI.h"
 #include "ofURLFileLoader.h"
-
-// lets do some fun stuff
+#include "ofxColorGradient.h"
 #include "ofxBox2d.h"
 
 // this must match the display resolution of your projector
@@ -103,4 +102,8 @@ public:
 	vector    <ofPtr<ofxBox2dCircle> >	circles;		  //	default box2d circles
 	vector	  <ofPtr<ofxBox2dRect> >	boxes;			  //	defalut box2d rects
 	
+	ofxColorGradient gradient;
+	float			 gradienti;
+	
+	int			colorDebug, colorContour, colorSelectedContour, colorInteractiveShape, colorBoxes, colorCircles, colorExplodingShape, colorPolishape;
 };

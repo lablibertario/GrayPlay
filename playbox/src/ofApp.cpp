@@ -95,17 +95,42 @@ void ofApp::setup() {
 	//gui->addLabel("x,y");
 	//gui->addSlider("x", 0, PROJECTOR_RESOLUTION_X, &ics);
 	//gui->addSlider("y", 0, PROJECTOR_RESOLUTION_Y, &igrec);
-    gui->addSpacer();
-    gui->addLabel("color");
-    gui->addSlider("red", 0, 255, backgroundColor.r);
-    gui->addSlider("green", 0, 255, backgroundColor.g);
-    gui->addSlider("blue", 0, 255, backgroundColor.b);
+    //gui->addSpacer();
+    //gui->addLabel("color");
+    //gui->addSlider("red", 0, 255, backgroundColor.r);
+    //gui->addSlider("green", 0, 255, backgroundColor.g);
+    //gui->addSlider("blue", 0, 255, backgroundColor.b);
 	
 	// enable autoload
 	//gui->loadSettings("gui1.xml");
 	 
 	// added to catch real time update of color
 	ofAddListener(gui->newGUIEvent,this,&ofApp::guiEvent);
+
+	//colorPlay
+	colorDebug = 0xFCFAE1;
+	colorContour = 0xFCFAE1;
+	colorSelectedContour = 0xFCFAE1;
+	colorInteractiveShape = 0xFCFAE1;
+	colorBoxes = 0xFCFAE1;
+	colorCircles = 0xFCFAE1;
+	colorExplodingShape = 0xFCFAE1;
+	colorPolishape = 0xFCFAE1;
+
+	//custom gradient design
+	//gradient.addColor( ofColor::black );
+	//gradient.addColor( ofColor::white );
+	//gradient.addColor( ofColor::black );
+	
+	//theme 
+	ofColor c;
+	c.setHex(0xE6E2AF); gradient.addColor(c);
+	c.setHex(0xA7A37E); gradient.addColor(c);
+	c.setHex(0xEFECCA); gradient.addColor(c);
+	c.setHex(0x046380); gradient.addColor(c);
+	c.setHex(0x002F2F); gradient.addColor(c);
+	gradienti=0.0f;
+
 
 	//setup performance window
 	secondWindow.setup("main", ofGetScreenWidth(), 0, PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, true);
@@ -116,9 +141,19 @@ void ofApp::setup() {
 
 void ofApp::update() {
 
+	//contain and increment gradient
+	if (gradienti > 1.0f) { gradienti = 0.0f; }
+	else { gradienti+=0.01f; }
+
+	//update the color of the contour to loop gradiently
+	colorContour = gradient.getColorAtPercent(gradienti).getHex();
+
+
 	//fix conturselected if it goes outa wack
 	if (contourSelected>(contoursOnscreen-1)) { contourSelected = contoursOnscreen-1; }
 	if (contourSelected<0) { contourSelected = 0; }
+
+	//
 
 	//show framerate
 	ofSetWindowTitle( ofToString( ofGetFrameRate(),1 ) );
@@ -233,7 +268,7 @@ void ofApp::drawDebug() {
 	info += "Contour slected: "+ofToString(contourSelected)+"\n";
 	info += "Total Bodies: "+ofToString(box2d.getBodyCount())+"\n\n";
 	info += "FPS: "+ofToString(ofGetFrameRate())+"\n";
-	ofSetColor(255);
+	ofSetHexColor(colorDebug);
 	ofDrawBitmapString(info, 300, 550);
 }
 
@@ -277,7 +312,7 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 		// draw contours using kinectoolkit conversion
 		ofBeginShape();
 		ofFill();
-		ofSetColor(backgroundColor); 
+		ofSetHexColor(colorContour); 
 		for (int j=0; j<points.size(); j++) {
 			ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
 			ofVec2f pp = kpt.getProjectedPoint(wp);         
@@ -295,7 +330,7 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 			ofBeginShape();
 			ofFill();
 			//mark the selected contour
-			if (contourSelected==i) { ofSetColor(120); } else { ofSetColor(backgroundColor,127); }
+			if (contourSelected==i) { ofSetHexColor(colorSelectedContour); } else { ofSetHexColor(colorContour); }
 			for (int j=0; j<points.size(); j++) {
 				// this gentleman right here is the real shit
 				ofVertex( points[j].x, points[j].y);
@@ -331,7 +366,7 @@ void ofApp::drawProj() {
 		//ofSetHexColor(0x6D130E);
 		//movingShapeLine.draw();
 		movingShape.updateShape();
-		ofSetColor(255);
+		ofSetHexColor(colorInteractiveShape);
 		movingShape.draw();
 	}
 	
@@ -339,25 +374,25 @@ void ofApp::drawProj() {
 		// draw boxes
 		for(int i=0; i<boxes.size(); i++) {
 			ofFill();
-			ofSetHexColor(0xFF380B);
+			ofSetHexColor(colorBoxes);
 			boxes[i].get()->draw();
 		}
 		// draw cicles
 		for (int i=0; i<circles.size(); i++) {
 			ofFill();
-			ofSetHexColor(0x438776);
+			ofSetHexColor(colorCircles);
 			circles[i].get()->draw();
 		}
 	}
 
 	if (isExplosion) {
 		//draw the exploding shape 
-		ofSetHexColor(0xFFEFE8);
+		ofSetHexColor(colorExplodingShape);
 		ofFill();
 		explodingShapeLine.draw();
 
 		//draw the polishape
-		ofSetHexColor(0x996C44);
+		ofSetHexColor(colorPolishape);
 		ofFill();
 		for (int i=0; i<polyShapes.size(); i++) {
 			polyShapes[i].get()->draw();        
@@ -441,21 +476,21 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
 	string name = e.widget->getName(); 
 	int kind = e.widget->getKind(); 
 	
-    if(name == "red")
-	{
-		ofxUISlider *rslider = (ofxUISlider *) e.widget; 
-		backgroundColor.r = rslider->getScaledValue(); 		
-	}    
-	else if(name == "green")
-	{
-		ofxUISlider *rslider = (ofxUISlider *) e.widget; 
-		backgroundColor.g = rslider->getScaledValue(); 		
-	}    
-	else if(name == "blue")
-	{
-		ofxUISlider *rslider = (ofxUISlider *) e.widget; 
-		backgroundColor.b = rslider->getScaledValue(); 		
-	}    
+ //   if(name == "red")
+	//{
+	//	ofxUISlider *rslider = (ofxUISlider *) e.widget; 
+	//	backgroundColor.r = rslider->getScaledValue(); 		
+	//}    
+	//else if(name == "green")
+	//{
+	//	ofxUISlider *rslider = (ofxUISlider *) e.widget; 
+	//	backgroundColor.g = rslider->getScaledValue(); 		
+	//}    
+	//else if(name == "blue")
+	//{
+	//	ofxUISlider *rslider = (ofxUISlider *) e.widget; 
+	//	backgroundColor.b = rslider->getScaledValue(); 		
+	//}    
    
     
 }
