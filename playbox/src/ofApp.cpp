@@ -77,6 +77,7 @@ void ofApp::setup() {
 	gui->addSpacer();
 	gui->addLabel("Project");
 	gui->addSlider("preset", 1, 4, &preset); //no ideea how to make a radio button
+	//gui->addSlider("contour", 1, 10, &contourSelected); //no ideea how to make a radio button
 	gui->addSpacer();
 	gui->addLabelToggle("isProductive", &isProductive);
 	gui->addLabelToggle("isCtrlComposite", &isCtrlComposite);
@@ -114,6 +115,11 @@ void ofApp::setup() {
 }
 
 void ofApp::update() {
+
+	//fix conturselected if it goes outa wack
+	if (contourSelected>(contoursOnscreen-1)) { contourSelected = contoursOnscreen-1; }
+	if (contourSelected<0) { contourSelected = 0; }
+
 	//show framerate
 	ofSetWindowTitle( ofToString( ofGetFrameRate(),1 ) );
 
@@ -129,8 +135,8 @@ void ofApp::update() {
 	if (isRaining) { update_rain();	}
 
 	// transform ONE countour into interactive box2s shapeline ever half a second (UPDATE)
-	if ((isInteractive)&&(contourFinder.size()>0)&&(ofGetElapsedTimeMillis()-timer2>contourTimer)) { 
-		vector<cv::Point> points = contourFinder.getContour(1);
+	if ((isInteractive)&&(contoursOnscreen>0)&&(ofGetElapsedTimeMillis()-timer2>contourTimer)) { 
+		vector<cv::Point> points = contourFinder.getContour(contourSelected);
 		movingShapeLine.clear(); 
 		for (int j=0; j<points.size(); j++) {
 			ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
@@ -178,7 +184,7 @@ void ofApp::update() {
         // determine found contours
         contourFinder.findContours(grayImage);	
 
-		//get a variable for debug
+		//get a fresh variable for all those questions about this deep in this cycle
 		contoursOnscreen = contourFinder.size();
 	}
 }
@@ -222,10 +228,10 @@ void ofApp::drawDebug() {
 	info += "(i) "+string(isInteractive?"Box2d":"Shape")+"\n";
 	info += "(r) "+string(isRaining?"Raining":"Clear")+"\n";
 	info += "(b) to break shape\n\n";
-
+	
 	info += "Total Contours: "+ofToString(contoursOnscreen)+"\n";
-	info += "Total Bodies: "+ofToString(box2d.getBodyCount())+"\n";
-	info += "Total Joints: "+ofToString(box2d.getJointCount())+"\n";
+	info += "Contour slected: "+ofToString(contourSelected)+"\n";
+	info += "Total Bodies: "+ofToString(box2d.getBodyCount())+"\n\n";
 	info += "FPS: "+ofToString(ofGetFrameRate())+"\n";
 	ofSetColor(255);
 	ofDrawBitmapString(info, 300, 550);
@@ -262,7 +268,9 @@ void ofApp::drawCtrl() {
 
 void ofApp::drawContours(int width, int height, bool debugProjector) {
 	// draw contours projected
-	for(int i = 0; i < contourFinder.size(); i++) {
+	ofEnableAntiAliasing();
+	ofEnableSmoothing();
+	for(int i = 0; i < contoursOnscreen; i++) {
 		vector<cv::Point> points = contourFinder.getContour(i);
 		int label = contourFinder.getLabel(i);
 
@@ -286,7 +294,8 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 			ofEnableAlphaBlending();
 			ofBeginShape();
 			ofFill();
-			ofSetColor(backgroundColor,127);
+			//mark the selected contour
+			if (contourSelected==i) { ofSetColor(120); } else { ofSetColor(backgroundColor,127); }
 			for (int j=0; j<points.size(); j++) {
 				// this gentleman right here is the real shit
 				ofVertex( points[j].x, points[j].y);
@@ -295,6 +304,8 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 			ofDisableAlphaBlending();
 		}
 	}    	
+	ofDisableAntiAliasing();
+	ofDisableSmoothing();
 }
 
 void ofApp::drawProj() {
@@ -320,7 +331,7 @@ void ofApp::drawProj() {
 		//ofSetHexColor(0x6D130E);
 		//movingShapeLine.draw();
 		movingShape.updateShape();
-		ofSetHexColor(0x7BE8B4);
+		ofSetColor(255);
 		movingShape.draw();
 	}
 	
@@ -367,7 +378,7 @@ void ofApp::explodeShape() {
 	explodingShapeLine.clear();  
 
 	//gets contour 1
-	vector<cv::Point> points = contourFinder.getContour(1);
+	vector<cv::Point> points = contourFinder.getContour(contourSelected);
 
 	//for all points of the contour
 	for (int j=0; j<points.size(); j++) {
@@ -451,87 +462,100 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
 
 void ofApp::keyPressed(int key){
 
-// if I ever need to get out pressing keys (like an input field in gui)	
-//    if(gui2->hasKeyboardFocus())
-//    {
-//       return;
-//    }
-	
+	// if I ever need to get out pressing keys (like an input field in gui)	
+	//    if(gui2->hasKeyboardFocus())
+	//    {
+	//       return;
+	//    }
+	// cout << "keyPressed " << key << endl;
 	switch (key)
 	{
-		case 'p':
-			isProductive=!isProductive;
-			break;
-		case 'o':
-			isCtrlComposite=!isCtrlComposite;
-			break;
-		case 'i':
-			isInteractive=!isInteractive;
-			isContours=!isContours;
-			movingShape.clear(); //cleanup leftover from interaction
-			break;
-	    case 'r':
-			isRaining=!isRaining;
-			break;
-		case 'b':
-			isExplosion=true;
-			if (contourFinder.size()>0) { explodeShape(); }
-			break;
+		//356 LEFT
+		//357 UP
+		//358 RIGHT
+		//359 DOWN
+	case 356:
+		contourSelected--;
+		break;
+	case 358:
+		contourSelected++;
+		break;
+	case 'g':
+		gui->toggleVisible();
+		break;
+	case 'p':
+		isProductive=!isProductive;
+		break;
+	case 'o':
+		isCtrlComposite=!isCtrlComposite;
+		break;
+	case 'i':
+		isInteractive=!isInteractive;
+		isContours=!isContours;
+		movingShape.clear(); //cleanup leftover from interaction
+		break;
+	case 'r':
+		isRaining=!isRaining;
+		break;
+	case 'b':
+		isExplosion=true;
+		if (contoursOnscreen>0) { explodeShape(); }
+		break;
 
-		case 'c':
-			explodingShapeLine.clear();
-			movingShapeLine.clear();
-			movingShape.clear();
-			polyShapes.clear();
-			circles.clear();
-			boxes.clear();
-			break;
-        			
-        case '1':
-            gui->loadSettings("gui1.xml");
-			preset=1;
-            break;
-            
-        case '2':
-            gui->loadSettings("gui2.xml");
-			preset=2;
-            break;
-            
-        case '3':
-            gui->loadSettings("gui3.xml");
-			preset=3;
-            break;
-            
-        case '4':
-            gui->loadSettings("gui4.xml");
-			preset=4;
-            break;
-            
-		case OF_KEY_F1:
-            gui->saveSettings("gui1.xml");
-            break;
-            
-        case OF_KEY_F2:
-            gui->saveSettings("gui2.xml");
-            break;
-            
-        case OF_KEY_F3:
-            gui->saveSettings("gui3.xml");
-            break;
-            
-        case OF_KEY_F4:
-            gui->saveSettings("gui4.xml");
-            break;
+	case 'c':
+		explodingShapeLine.clear();
+		movingShapeLine.clear();
+		movingShape.clear();
+		polyShapes.clear();
+		circles.clear();
+		boxes.clear();
+		break;
 
-		case 'l':
-			img.clear();
-			ofLoadURLAsync("https://scontent-b-fra.xx.fbcdn.net/hphotos-xfp1/l/t31.0-8/10619982_281873851999198_2117754016354577419_o.jpg","ziua"); // make an array, add to settings (presets) and config file.
-			loading =true;
-			break;
+	case '1':
+		gui->loadSettings("gui1.xml");
+		preset=1;
+		break;
+
+	case '2':
+		gui->loadSettings("gui2.xml");
+		preset=2;
+		break;
+
+	case '3':
+		gui->loadSettings("gui3.xml");
+		preset=3;
+		break;
+
+	case '4':
+		gui->loadSettings("gui4.xml");
+		preset=4;
+		break;
+
+	case OF_KEY_F1:
+		gui->saveSettings("gui1.xml");
+		break;
+
+	case OF_KEY_F2:
+		gui->saveSettings("gui2.xml");
+		break;
+
+	case OF_KEY_F3:
+		gui->saveSettings("gui3.xml");
+		break;
+
+	case OF_KEY_F4:
+		gui->saveSettings("gui4.xml");
+		break;
+
+	case 'l':
+		img.clear();
+		ofLoadURLAsync("https://scontent-b-fra.xx.fbcdn.net/hphotos-xfp1/l/t31.0-8/10619982_281873851999198_2117754016354577419_o.jpg","ziua"); // make an array, add to settings (presets) and config file.
+		loading =true;
+		break;
 
 
-		default:
-			break;
+	default:
+		break;
 	}
 }
 
