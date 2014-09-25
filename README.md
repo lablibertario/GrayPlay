@@ -49,8 +49,9 @@ Addons for openframeworks.
 - ofxKinectProjectorToolkit
 - ofxUI
 and
-- ofURLFileLoader
+- ofURLFileLoader 
 - ofxBox2d 
+- ofxColorGradient
 
 Compatibility
 ------------

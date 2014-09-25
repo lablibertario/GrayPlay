@@ -320,13 +320,16 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
 	for(int i = 0; i < contoursOnscreen; i++) {
+
 		vector<cv::Point> points = contourFinder.getContour(i);
 		int label = contourFinder.getLabel(i);
-
+		// cout << "nr of points " << points.size() << endl;
 		// draw contours using kinectoolkit conversion
 		ofBeginShape();
 		ofFill();
 		ofSetHexColor(colorContour); 
+
+
 		for (int j=0; j<points.size(); j++) {
 			ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
 			ofVec2f pp = kpt.getProjectedPoint(wp);         
@@ -340,6 +343,10 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 
 		if (debugProjector)
 		{
+			ofSetColor(yellowPrint);
+			ofPolyline convexHull = toOf(contourFinder.getConvexHull(i));
+			convexHull.draw();
+
 			ofEnableAlphaBlending();
 			ofBeginShape();
 			ofFill();
