@@ -12,7 +12,7 @@ void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_NOTICE); //not used but who knows.
 	box2d.init();
 	box2d.setGravity(0, 10);
-	//box2d.createGround(); (will be created manually if needed)
+	box2d.createGround(); //(will be created manually if needed)
 	box2d.setFPS(30.0);
 	
 	// dynamic load ? (cleanup)
