@@ -54,7 +54,7 @@ void ofApp::setup() {
 	maxDistance = 32;
 	preset=1;
 	contourTimer=0;
-	gradientPhase=0.01f;
+	piMultiplier=1.0f;
 
     // setup gui that's why (must be a way to set them up directly in the gui hmmmm)
     gui = new ofxUICanvas();
@@ -92,7 +92,7 @@ void ofApp::setup() {
 	gui->addLabelToggle("isExplosion", &isExplosion);
 	gui->addSpacer();
 	gui->addSlider("contourTimer", 0, 2000, &contourTimer); //how fast to refresh interactive shape
-	gui->addSlider("gradientPhase", 0.00f, 0.2f, &gradientPhase); //how fast to loop through the colors
+	gui->addSlider("piMultiplier", 0.0f, 2.0f, &piMultiplier); //how fast to loop through the colors
 	;
 	//gui->addLabel("x,y");
 	//gui->addSlider("x", 0, PROJECTOR_RESOLUTION_X, &ics);
@@ -142,32 +142,35 @@ void ofApp::setup() {
 	c.setHex(0x79BD8F); gradient.addColor(c);
 	c.setHex(0x00A388); gradient.addColor(c);
 	c.setHex(0xFF6138); gradient.addColor(c); // <--back to the first one
-	gradienti=0.0f;
-
-
+	
 
 	//setup performance window
 	secondWindow.setup("main", ofGetScreenWidth(), 0, PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, true);
 
+	// here goes
+	fbo.allocate( PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y );
+
+	//fix this with the pi thingy.
 	timer1 = ofGetElapsedTimeMillis();
 	timer2 = ofGetElapsedTimeMillis();
 }
 
 void ofApp::update() {
 
-	//contain and increment gradient
-	if (gradienti > 1.0f) { gradienti = 0.0f; }
-	else { gradienti+=gradientPhase; }
+	//get time to be used for sin functions lateron
+	float time = ofGetElapsedTimef(); 
+	//Get periodic value in [-1,1], with wavelength equal to 0.5 seconds
+	value = sin( time * PI * piMultiplier);
+
+	// map value from -1,1 to 0.0f 0.1f
+	float gradienti = ofMap(value, -1, 1, 0.0f, 1.0f );
 
 	//update the color of the contour to loop gradiently
 	colorContour = gradient.getColorAtPercent(gradienti).getHex();
 
-
 	//fix conturselected if it goes outa wack
 	if (contourSelected>(contoursOnscreen-1)) { contourSelected = contoursOnscreen-1; }
 	if (contourSelected<0) { contourSelected = 0; }
-
-	//
 
 	//show framerate
 	ofSetWindowTitle( ofToString( ofGetFrameRate(),1 ) );
@@ -259,6 +262,7 @@ void ofApp::update_rain(){
 void ofApp::draw() {
 	// using two windows is confusing, so i'm trying to break it in 3 :)
 	
+	
 	//draw complicated stuff in the first window only when needed (save speed)
 	if (!isProductive) { drawCtrl(); }
 	
@@ -294,7 +298,7 @@ void ofApp::drawCtrl() {
 	ofBackground(0); 
 	ofSetColor(255);
 	
-	//drawing control windows
+	//store transformation matrix and start drawing windows
 	ofPushMatrix();  
 		
 	// draw kinectRGB + contours  / gray image + proj composite
@@ -369,9 +373,11 @@ void ofApp::drawProj() {
 	// one day this will be the main screen after some kind of network pipeline with the ctrl
 	//projector
     secondWindow.begin();
-
-	//change of mood naah
-	//ofBackgroundHex(0xfdefc2);
+	
+	//Map value from [-1,1] to [0,255]
+	// float v = ofMap( value, -1, 1, 0, 255 );
+	//background loops
+	//ofBackground(v,v,v);
 	ofBackground(0);
 
 	//CV meagic (abracadabric)

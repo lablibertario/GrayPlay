@@ -71,19 +71,23 @@ public:
 	bool						isExplosionEnd; 
 	bool						isGround; //box2d bottom
 	
+	// fix this
 	float						timer1; //used for dropping boxes frequence
 	float						timer2; //used for interactive shape refresh 
 	float						contourTimer; //the actual milisecond value for timer2
-	float						gradientPhase; // gradient loop increments (speed of the change of color)
 	
+	//trying to fix that
+	float						value; //app wide value betwwen -1 and 1 at interval of 1s
+	float						piMultiplier; //gui amplifier for value
 	float						preset; //preset gui var
 	int							contourSelected; //the selected contour by means of keys left right :)
 	float						contoursOnscreen; //total contours (at the end of update)
 
-	ofxColorGradient			gradient;  //one set of color scheme.
-	float						gradienti; //loop through colors
+	// colors, baby
+	ofxColorGradient			gradient;  //color scheme.
 	int							colorDebug, colorContour, colorSelectedContour, colorInteractiveShape, colorBoxes, colorCircles, colorExplodingShape, colorPolishape;
 
+	//will I ever use this?
 	void urlResponse(ofHttpResponse & response);
 	ofImage img;
 	bool loading;
@@ -96,5 +100,8 @@ public:
 	vector	  <ofPtr<ofxBox2dPolygon> >	polyShapes;		  //    pieces of shape maybe eh?
 	vector    <ofPtr<ofxBox2dCircle> >	circles;		  //	default box2d circles
 	vector	  <ofPtr<ofxBox2dRect> >	boxes;			  //	defalut box2d rects
+
+	//here goes 
+	ofFbo fbo;
 
 };
