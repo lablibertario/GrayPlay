@@ -9,7 +9,7 @@ I'm learning by doing both programming and GitHub. I started this project by usi
 Installation
 ------------
 Clone this to the apps folder of your everyday openframework. <br>
-Plug kinect in, update drivers using (.inf) files fom addons\ofxKinect\libs\libfreenect\platform\windows\inf<br>
+Plug kinect (v1) in, update drivers using (.inf) files fom addons\ofxKinect\libs\libfreenect\platform\windows\inf<br>
 
 Usage
 -----
@@ -32,11 +32,11 @@ F1-F4 | Save current parameters to a file
 1-4 | Load parameters from file
 p | Hide elements in the 1st window (production mode)
 o | Adds a debug projection mapping in the control panel 
-b | "Breaks" the 1st contour into 2dBox physics triangles (explode)
+b | "Breaks" the selected contour into 2dBox physics triangles (explode)
 c | Clears all 2dbox stuff
-i  | 1st contour interactive in 2dBox world
+i  | slected contour interactive in 2dBox world
 r  | interface "raining" flag makes 2dbox cicles and boxes fall from the sky
-
+left,right | select countour
 
 Dependencies
 ------------
@@ -60,6 +60,12 @@ Tested with 0.8.3 (win8, win8.1)
 Known issues
 ------------
 I'm learning so this will be very messy.
+Resolution in ofApp.h is hard-coded. Changing values would kill the magic.
+#define PROJECTOR_RESOLUTION_X 1360
+#define PROJECTOR_RESOLUTION_Y 768
+#define SCREEN_RESOLUTION_X 1366
+#define SCREEN_RESOLUTION_Y 768
+
 
 Version history
 ---------------

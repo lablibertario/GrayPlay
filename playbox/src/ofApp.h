@@ -11,7 +11,7 @@
 #include "ofxColorGradient.h"
 #include "ofxBox2d.h"
 
-// this must match the display resolution of your projector
+// this must match the display resolution of your projector (however, I did not _test_ another resolution)
 #define PROJECTOR_RESOLUTION_X 1360
 #define PROJECTOR_RESOLUTION_Y 768
 

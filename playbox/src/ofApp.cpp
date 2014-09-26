@@ -12,7 +12,7 @@ void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_NOTICE); //not used but who knows.
 	box2d.init();
 	box2d.setGravity(0, 10);
-	box2d.createGround(); //(will be created manually if needed)
+	box2d.createGround(); // this need to be added as a box2d shape (on/off)
 	box2d.setFPS(30.0);
 	
 	// dynamic load ? (cleanup)
@@ -323,7 +323,7 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 
 		vector<cv::Point> points = contourFinder.getContour(i);
 		int label = contourFinder.getLabel(i);
-		// cout << "nr of points " << points.size() << endl;
+		 cout << "nr of points " << points.size() << endl;
 		// draw contours using kinectoolkit conversion
 		ofBeginShape();
 		ofFill();
