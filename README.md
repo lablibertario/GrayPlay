@@ -20,22 +20,22 @@ Usage
 Copy the produced xml file to the playbox bin folder.
 
 ####playbox
-- uses ofxBox2d
-- loads calibration xml, presets
-- control panel first screen (keys)
-- projection screen 
-- explode, interact shape, rain boxes (box2d)
+- loads calibration xml, gui presets
+- control panel first screen (keys + gui + visual)
+- projection screen second screen
 
 Key | Function
 :--- | :---
-F1-F4 | Save current parameters to a file
-1-4 | Load parameters from file
-p | Hide elements in the 1st window (production mode)
-o | Adds a debug projection mapping in the control panel 
+F1-F4 | Save current parameters to a file (save preset)
+1-4 | Load parameters from file (load preset)
+p | draw/hide elements in the 1st window (production mode)
+o | draw/hide a debug projection mapping in the control panel 
+u | draw/hide contours
+y | draw/hide fbo tests (gui fboTrial to see al tests)
 b | "Breaks" the selected contour into 2dBox physics triangles (explode)
+i | slected contour interactive in 2dBox world
+r | interface "raining" flag makes 2dbox boxes fall from the sky
 c | Clears all 2dbox stuff
-i  | slected contour interactive in 2dBox world
-r  | interface "raining" flag makes 2dbox cicles and boxes fall from the sky
 left,right | select countour
 
 Dependencies
@@ -59,12 +59,13 @@ Tested with 0.8.3 (win8, win8.1)
 
 Known issues
 ------------
-I'm learning so this will be very messy.
-Resolution in ofApp.h is hard-coded. Changing values would kill the magic.
+- I'm learning so this will be very messy. very very messy.
+- Resolution in ofApp.h is hard-coded. Changing values would kill the magic.
 #define PROJECTOR_RESOLUTION_X 1360
 #define PROJECTOR_RESOLUTION_Y 768
 #define SCREEN_RESOLUTION_X 1366
 #define SCREEN_RESOLUTION_Y 768
+- some strange issue with box2d, drawing circles messes up drawing fbo in secondwindow.end
 
 
 Version history
