@@ -1,4 +1,4 @@
-#include "ofApp.h"
+﻿#include "ofApp.h"
 
 static bool shouldRemove(ofPtr<ofxBox2dBaseShape>shape) {
 	return !ofRectangle(0, -200, ofGetWidth(), ofGetHeight()+200).inside(shape.get()->getPosition());
@@ -42,9 +42,9 @@ void ofApp::setup() {
 	isInteractive=false;
 	isExplosion=false;
 	isGround=true;
+	isGl=false;
 
 	//default hard coded parameters. why oh why
-	// ofEnableAlphaBlending(); wtf!
 	nearThreshold = 230;
 	farThreshold = 10;
 	minArea = 1000;
@@ -55,6 +55,8 @@ void ofApp::setup() {
 	preset=1;
 	contourTimer=0;
 	piMultiplier=1.0f;
+	fadeAmnt = 20;
+	fboTrial = 1;
 
     // setup gui that's why (must be a way to set them up directly in the gui hmmmm)
     gui = new ofxUICanvas();
@@ -78,6 +80,7 @@ void ofApp::setup() {
 	gui->addSpacer();
 	gui->addLabel("Project");
 	gui->addSlider("preset", 1, 4, &preset); //no ideea how to make a radio button
+	gui->addIntSlider("fboTrial", 1, 10, &fboTrial); 
 	//gui->addSlider("contour", 1, 10, &contourSelected); //no ideea how to make a radio button
 	gui->addSpacer();
 	gui->addLabelToggle("isProductive", &isProductive);
@@ -85,24 +88,15 @@ void ofApp::setup() {
 	gui->addSpacer();
 	gui->addLabelToggle("isContours", &isContours);
 	gui->addLabelToggle("isInteractive", &isInteractive);
+	gui->addLabelToggle("isGl", &isGl);
 	gui->addSpacer();
 	gui->addLabelToggle("isRaining", &isRaining);
-	gui->addLabelToggle("isGround", &isGround);
 	gui->addLabelToggle("isBroken", &isBroken);
-	gui->addLabelToggle("isExplosion", &isExplosion);
 	gui->addSpacer();
 	gui->addSlider("contourTimer", 0, 2000, &contourTimer); //how fast to refresh interactive shape
 	gui->addSlider("piMultiplier", 0.0f, 2.0f, &piMultiplier); //how fast to loop through the colors
-	;
-	//gui->addLabel("x,y");
-	//gui->addSlider("x", 0, PROJECTOR_RESOLUTION_X, &ics);
-	//gui->addSlider("y", 0, PROJECTOR_RESOLUTION_Y, &igrec);
-    //gui->addSpacer();
-    //gui->addLabel("color");
-    //gui->addSlider("red", 0, 255, backgroundColor.r);
-    //gui->addSlider("green", 0, 255, backgroundColor.g);
-    //gui->addSlider("blue", 0, 255, backgroundColor.b);
-	
+	gui->addIntSlider("fadeAmount", 0, 255, &fadeAmnt); //how fast to loop through the colors
+
 	// enable autoload
 	//gui->loadSettings("gui1.xml");
 	 
@@ -122,18 +116,7 @@ void ofApp::setup() {
 	//custom gradient design
 	//gradient.addColor( ofColor::black );
 	//gradient.addColor( ofColor::white );
-	//gradient.addColor( ofColor::black );
 	
-	////theme 1
-	//ofColor c;
-	//c.setHex(0xE6E2AF); gradient.addColor(c);
-	//c.setHex(0xA7A37E); gradient.addColor(c);
-	//c.setHex(0xEFECCA); gradient.addColor(c);
-	//c.setHex(0x046380); gradient.addColor(c);
-	//c.setHex(0x002F2F); gradient.addColor(c);
-	//c.setHex(0xE6E2AF); gradient.addColor(c); // <--back to the first one
-	//gradienti=0.0f;
-
 	//theme 2
 	ofColor c;
 	c.setHex(0xFF6138); gradient.addColor(c);
@@ -141,29 +124,61 @@ void ofApp::setup() {
 	c.setHex(0xBEEB9F); gradient.addColor(c);
 	c.setHex(0x79BD8F); gradient.addColor(c);
 	c.setHex(0x00A388); gradient.addColor(c);
-	c.setHex(0xFF6138); gradient.addColor(c); // <--back to the first one
-	
 
-	//setup performance window
+	//setup projector window
 	secondWindow.setup("main", ofGetScreenWidth(), 0, PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, true);
-
-	// here goes
-	fbo.allocate( PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y );
 
 	//fix this with the pi thingy.
 	timer1 = ofGetElapsedTimeMillis();
 	timer2 = ofGetElapsedTimeMillis();
+
+	//gl
+	//allocate our fbos. 
+	//providing the dimensions and the format for the,
+	rgbaFbo.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA); // with alpha, 8 bits red, 8 bits green, 8 bits blue, 8 bits alpha, from 0 to 255 in 256 steps	
+
+	#ifdef TARGET_OPENGLES
+	rgbaFboFloat.allocate(400, 400, GL_RGBA ); // with alpha, 32 bits red, 32 bits green, 32 bits blue, 32 bits alpha, from 0 to 1 in 'infinite' steps
+        ofLogWarning("ofApp") << "GL_RGBA32F_ARB is not available for OPENGLES.  Using RGBA.";	
+	#else
+        rgbaFboFloat.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA32F_ARB); // with alpha, 32 bits red, 32 bits green, 32 bits blue, 32 bits alpha, from 0 to 1 in 'infinite' steps
+	#endif
+	
+	// we can also define the fbo with ofFbo::Settings.
+	// this allows us so set more advanced options the width (400), the height (200) and the internal format like this
+	/*
+	 ofFbo::Settings s;
+	 s.width			= 400;
+	 s.height			= 200;
+	 s.internalformat   = GL_RGBA;
+	 s.useDepth			= true;
+	 // and assigning this values to the fbo like this:
+	 rgbFbo.allocate(s);
+	 */
+	 		
+    // we have to clear all the fbos so that we don't see any artefacts
+	// the clearing color does not matter here, as the alpha value is 0, that means the fbo is cleared from all colors
+	// whenever we want to draw/update something inside the fbo, we have to write that inbetween fbo.begin() and fbo.end()
+    
+    rgbaFbo.begin();
+	ofClear(255,255,255, 0);
+    rgbaFbo.end();
+	
+	rgbaFboFloat.begin();
+	ofClear(255,255,255, 0);
+    rgbaFboFloat.end();
 }
 
 void ofApp::update() {
 
 	//get time to be used for sin functions lateron
 	float time = ofGetElapsedTimef(); 
+
 	//Get periodic value in [-1,1], with wavelength equal to 0.5 seconds
 	value = sin( time * PI * piMultiplier);
 
 	// map value from -1,1 to 0.0f 0.1f
-	float gradienti = ofMap(value, -1, 1, 0.0f, 1.0f );
+	float gradienti = ofMap(value, -1, 1, 0.01, 0.99 );
 
 	//update the color of the contour to loop gradiently
 	colorContour = gradient.getColorAtPercent(gradienti).getHex();
@@ -184,9 +199,11 @@ void ofApp::update() {
 	box2d.update();	
 	
 	// rain
-	if (isRaining) { update_rain();	}
+	if (isRaining) { 
+		update_rain();	
+	}
 
-	// transform ONE countour into interactive box2s shapeline ever half a second (UPDATE)
+	// transform slected countour into interactive box2s shapeline ever half a second (UPDATE)
 	if ((isInteractive)&&(contoursOnscreen>0)&&(ofGetElapsedTimeMillis()-timer2>contourTimer)) { 
 		vector<cv::Point> points = contourFinder.getContour(contourSelected);
 		movingShapeLine.clear(); 
@@ -239,29 +256,44 @@ void ofApp::update() {
 		//get a fresh variable for all those questions about this deep in this cycle
 		contoursOnscreen = contourFinder.size();
 	}
+
+	ofEnableAlphaBlending();
+	
+	//lets draw some graphics into our two fbos
+    rgbaFbo.begin();
+		drawFboContours();
+    rgbaFbo.end();
+	  	
+    rgbaFboFloat.begin();
+		drawFboContours();
+	rgbaFboFloat.end();
+
 }
 
 void ofApp::update_rain(){
 	// add some circles and boxes every random interval from 500ms up to a 1 sec
-	if(ofGetElapsedTimeMillis()-timer1>(int)ofRandom(500, 1000)){
-		ofPtr<ofxBox2dCircle> circle = ofPtr<ofxBox2dCircle>(new ofxBox2dCircle);
-		circle.get()->setPhysics(0.3, 0.5, 0.1);
-		circle.get()->setup(box2d.getWorld(), (ofGetWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 30));
-		circles.push_back(circle);
-		timer1 = ofGetElapsedTimeMillis();
-	}
+
+	//circles won't work, see why at draw()
+	//if(ofGetElapsedTimeMillis()-timer1>(int)ofRandom(500, 1000)){
+	//	ofPtr<ofxBox2dCircle> circle = ofPtr<ofxBox2dCircle>(new ofxBox2dCircle);
+	//	circle.get()->setPhysics(0.3, 0.5, 0.1);
+	//	circle.get()->setup(box2d.getWorld(), (secondWindow.getWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 30));
+	//	circles.push_back(circle);
+	//	timer1 = ofGetElapsedTimeMillis();
+	//}
+
 	if(ofGetElapsedTimeMillis()-timer1>(int)ofRandom(500, 1000)){
 		ofPtr<ofxBox2dRect> box = ofPtr<ofxBox2dRect>(new ofxBox2dRect);
 		box.get()->setPhysics(0.3, 0.5, 0.1);
-		box.get()->setup(box2d.getWorld(), (ofGetWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 40), ofRandom(10, 40));
+		box.get()->setup(box2d.getWorld(), (secondWindow.getWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 40), ofRandom(10, 40));
 		boxes.push_back(box);
 		timer1 = ofGetElapsedTimeMillis();
 	}
+
 }
 
 void ofApp::draw() {
 	// using two windows is confusing, so i'm trying to break it in 3 :)
-	
 	
 	//draw complicated stuff in the first window only when needed (save speed)
 	if (!isProductive) { drawCtrl(); }
@@ -284,6 +316,7 @@ void ofApp::drawDebug() {
 	
 	info += "Total Contours: "+ofToString(contoursOnscreen)+"\n";
 	info += "Contour slected: "+ofToString(contourSelected)+"\n";
+	info += "Contour slected points: "+ofToString(contourSelectedPoints)+"\n";
 	info += "Total Bodies: "+ofToString(box2d.getBodyCount())+"\n\n";
 	info += "FPS: "+ofToString(ofGetFrameRate())+"\n";
 	ofSetHexColor(colorDebug);
@@ -327,7 +360,8 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 
 		vector<cv::Point> points = contourFinder.getContour(i);
 		int label = contourFinder.getLabel(i);
-		 cout << "nr of points " << points.size() << endl;
+		if (i == contourSelected) { contourSelectedPoints = points.size(); }
+		
 		// draw contours using kinectoolkit conversion
 		ofBeginShape();
 		ofFill();
@@ -368,6 +402,76 @@ void ofApp::drawContours(int width, int height, bool debugProjector) {
 	ofDisableSmoothing();
 }
 
+void ofApp::drawFboContours() {		
+	//clear fbo each frame
+	//ofClear(255,255,255, 0);
+
+	//Sep 27, 1:57 PM
+	//by drawing a rectangle the size of the fbo with a small alpha value, we can slowly fade the current contents of the fbo. 
+	//Daniel Radu
+	//Mihai Tarmure
+	//😃 [rolling eyes]
+
+	//drawing a rectangle the size of fba with alpha 
+	
+	ofFill();
+	ofSetColor(255,255,255, fadeAmnt);
+	ofRect(0,0,PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y);
+
+	//draw stuff
+	ofNoFill();
+	ofSetColor(255,255,255);
+
+
+	switch (fboTrial) {
+	case 1:
+		// get selected contour pixels (this should be done only once....)
+		if (contoursOnscreen>0) { 
+			vector<cv::Point> points = contourFinder.getContour(contourSelected);
+			ofFill();	   
+			for (int j=0; j<points.size(); j++) {
+				ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
+				ofVec2f pp = kpt.getProjectedPoint(wp);         
+				//draw a circle for each point
+				ofCircle(
+					ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+					ofMap(pp.y, 0, 1, 0, secondWindow.getHeight()), 2
+					);
+			}
+		}
+		break;
+	case 2:
+		// get selected contour pixels (this should be done only once....)
+		if (contoursOnscreen>0) { 
+			vector<cv::Point> points = contourFinder.getContour(contourSelected);
+			ofSetHexColor(colorContour);
+			ofFill();	   
+			for (int j=0; j<points.size(); j++) {
+				ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
+				ofVec2f pp = kpt.getProjectedPoint(wp);         
+				//draw a circle for each point
+				ofCircle(
+					ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+					ofMap(pp.y, 0, 1, 0, secondWindow.getHeight()), 8
+					);
+			}
+		}
+		break;
+	case 3:
+		break;
+	case 4:
+		break;
+	case 5:
+		break;
+	case 6:
+		break;
+	case 7:
+		break;
+	case 8:
+		break;
+	}
+}
+
 void ofApp::drawProj() {
 	// welcome to the second screen, the projector/production/play
 	// one day this will be the main screen after some kind of network pipeline with the ctrl
@@ -388,6 +492,12 @@ void ofApp::drawProj() {
 		drawContours(secondWindow.getWidth(),secondWindow.getHeight(),false); 
 	}
 
+	if (isGl) {
+		ofSetColor(255,255,255);  	
+		ofBackground(0);  // needed this for fbo in second window.
+		rgbaFbo.draw(0,0);
+	}
+
 	if (isInteractive) {
 		// draw the moving shape - drawing line is exactly the same wtf (debug)
 		//ofSetHexColor(0x6D130E);
@@ -398,17 +508,20 @@ void ofApp::drawProj() {
 	}
 	
 	if ((isRaining)||(boxes.size()>0)||(circles.size()>0)) { 
+
+		//terrible bug  here, for some reason drawing circles makes secondwindow.end go bananas (white background for no good reason). Boxes and other shapes seems to be fine.
+		// draw cicles
+		//		for (int i=0; i<circles.size(); i++) {
+		//			ofFill();
+		//			ofSetHexColor(colorCircles);
+		//			circles[i].get()->draw(); 
+		//		}
+
 		// draw boxes
 		for(int i=0; i<boxes.size(); i++) {
 			ofFill();
 			ofSetHexColor(colorBoxes);
 			boxes[i].get()->draw();
-		}
-		// draw cicles
-		for (int i=0; i<circles.size(); i++) {
-			ofFill();
-			ofSetHexColor(colorCircles);
-			circles[i].get()->draw();
 		}
 	}
 
@@ -480,10 +593,10 @@ void ofApp::explodeShape() {
 	} else { // drop a poly shape 
 		
 		// first simplify the shape
-		explodingShapeLine.simplify();
+		//explodingShapeLine.simplify();
 
 		//explodingShapeLine = explodingShapeLine.getResampledByCount(b2_maxPolygonVertices );
-		explodingShapeLine = explodingShapeLine.getResampledBySpacing(25);
+		//explodingShapeLine = explodingShapeLine.getResampledBySpacing(25);
 
 		//explodingShapeLine = getConvexHull(explodingShapeLine);
 
@@ -553,8 +666,13 @@ void ofApp::keyPressed(int key){
 		break;
 	case 'i':
 		isInteractive=!isInteractive;
-		isContours=!isContours;
 		movingShape.clear(); //cleanup leftover from interaction
+		break;
+	case 'u':
+		isContours=!isContours;
+		break;
+	case 'y':
+		isGl=!isGl;
 		break;
 	case 'r':
 		isRaining=!isRaining;

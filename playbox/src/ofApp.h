@@ -37,6 +37,7 @@ public:
 	void exit();
 	void keyPressed(int key);
 	void explodeShape();
+	
 
 	ofxSecondWindow             secondWindow;
 
@@ -70,7 +71,9 @@ public:
 	bool						isExplosionStart; 
 	bool						isExplosionEnd; 
 	bool						isGround; //box2d bottom
-	
+	bool						isGl; //opengl tests
+	int							fboTrial; //which way to display fbo (ugly sandbox mode)
+
 	// fix this
 	float						timer1; //used for dropping boxes frequence
 	float						timer2; //used for interactive shape refresh 
@@ -81,6 +84,7 @@ public:
 	float						piMultiplier; //gui amplifier for value
 	float						preset; //preset gui var
 	int							contourSelected; //the selected contour by means of keys left right :)
+	int							contourSelectedPoints; //the number of points in the selected contour (why global variable, duuno because hmmm.
 	float						contoursOnscreen; //total contours (at the end of update)
 
 	// colors, baby
@@ -101,7 +105,15 @@ public:
 	vector    <ofPtr<ofxBox2dCircle> >	circles;		  //	default box2d circles
 	vector	  <ofPtr<ofxBox2dRect> >	boxes;			  //	defalut box2d rects
 
-	//here goes 
-	ofFbo fbo;
+	//here goes gl
+	void drawFboContours(); // draws the contours using fbo tail
+
+	//8 bits red, 8 bits green, 8 bits blue, from 0 to 255 in 256 steps
+	ofFbo rgbaFbo; // with alpha
+
+	//32 bits red, 32 bits green, 32 bits blue, from 0 to 1 in 'infinite' steps	
+	ofFbo rgbaFboFloat; // with alpha
+
+	int fadeAmnt;	//the vbo alpha fade thingy
 
 };
