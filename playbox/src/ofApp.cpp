@@ -35,14 +35,15 @@ void ofApp::setup() {
 	loading=false;
 	isProductive=false;
 	isProductive=false;
-	isContours=true;
+	isContours=false;
+	isGl=true;
 	isCtrlComposite=true;
 	isBroken=true;
 	isRaining=false;
 	isInteractive=false;
 	isExplosion=false;
 	isGround=true;
-	isGl=false;
+	
 
 	//default hard coded parameters. why oh why
 	nearThreshold = 230;
@@ -56,7 +57,7 @@ void ofApp::setup() {
 	contourTimer=0;
 	piMultiplier=1.0f;
 	fadeAmnt = 20;
-	fboTrial = 1;
+	fboTrial = 5;
 
     // setup gui that's why (must be a way to set them up directly in the gui hmmmm)
     gui = new ofxUICanvas();
@@ -80,8 +81,7 @@ void ofApp::setup() {
 	gui->addSpacer();
 	gui->addLabel("Project");
 	gui->addSlider("preset", 1, 4, &preset); //no ideea how to make a radio button
-	gui->addIntSlider("fboTrial", 1, 10, &fboTrial); 
-	//gui->addSlider("contour", 1, 10, &contourSelected); //no ideea how to make a radio button
+	gui->addIntSlider("fbo", 1, 10, &fboTrial); 
 	gui->addSpacer();
 	gui->addLabelToggle("isProductive", &isProductive);
 	gui->addLabelToggle("isCtrlComposite", &isCtrlComposite);
@@ -98,7 +98,7 @@ void ofApp::setup() {
 	gui->addIntSlider("fadeAmount", 0, 255, &fadeAmnt); //how fast to loop through the colors
 
 	// enable autoload
-	//gui->loadSettings("gui1.xml");
+	gui->loadSettings("gui1.xml");
 	 
 	// added to catch real time update of color
 	ofAddListener(gui->newGUIEvent,this,&ofApp::guiEvent);
@@ -422,54 +422,174 @@ void ofApp::drawFboContours() {
 	ofNoFill();
 	ofSetColor(255,255,255);
 
+	// all contours
+	for(int i = 0; i < contoursOnscreen; i++) {
+		switch (fboTrial) {
+		case 1:
+			// white circles for points-----------------------------------------------------
+			if (contoursOnscreen>0) { 
+				vector<cv::Point> points = contourFinder.getContour(i);
+				ofFill();	   
+				for (int j=0; j<points.size(); j++) {
+					ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
+					ofVec2f pp = kpt.getProjectedPoint(wp);         
+					//draw a circle for each point
+					ofCircle(
+						ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+						ofMap(pp.y, 0, 1, 0, secondWindow.getHeight()), 2
+						);
+				}
+			}
+			break;
+		case 2:
+			// bigger circles for points with the looping color-----------------------------------------------------
+			if (contoursOnscreen>0) { 
+				vector<cv::Point> points = contourFinder.getContour(i);
+				ofSetHexColor(colorContour);
+				ofFill();	   
+				for (int j=0; j<points.size(); j++) {
+					ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
+					ofVec2f pp = kpt.getProjectedPoint(wp);         
+					//draw a circle for each point
+					ofCircle(
+						ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+						ofMap(pp.y, 0, 1, 0, secondWindow.getHeight()), 8
+						);
+				}
+			}
+			break;
+		case 3:
+			// lines from center to all ends-----------------------------------------------------
+			if (contoursOnscreen>0) { 
+				vector<cv::Point> points = contourFinder.getContour(i);
+				ofPoint center = toOf(contourFinder.getCenter(i));
 
-	switch (fboTrial) {
-	case 1:
-		// get selected contour pixels (this should be done only once....)
-		if (contoursOnscreen>0) { 
-			vector<cv::Point> points = contourFinder.getContour(contourSelected);
-			ofFill();	   
-			for (int j=0; j<points.size(); j++) {
-				ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
-				ofVec2f pp = kpt.getProjectedPoint(wp);         
-				//draw a circle for each point
-				ofCircle(
+				//big circle in the center
+				ofFill();	   
+				ofVec3f wp = kinect.getWorldCoordinateAt(center.x, center.y);
+				ofVec2f pp = kpt.getProjectedPoint(wp);
+				ofPoint projectedCenter = ofPoint(
 					ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
-					ofMap(pp.y, 0, 1, 0, secondWindow.getHeight()), 2
+					ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
 					);
+				ofCircle(projectedCenter, 10);			
+
+				ofSetLineWidth(1);
+
+				// from center to all contour
+				for (int j=0; j<points.size(); j++) {
+					ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
+					ofVec2f pp = kpt.getProjectedPoint(wp);
+					ofPoint projectedPoint = ofPoint(
+						ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+						ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
+						);
+					//draw a circle for each point
+					ofCircle(projectedPoint, 1);			
+					ofLine(	projectedCenter, projectedPoint);
+				}
 			}
-		}
-		break;
-	case 2:
-		// get selected contour pixels (this should be done only once....)
-		if (contoursOnscreen>0) { 
-			vector<cv::Point> points = contourFinder.getContour(contourSelected);
-			ofSetHexColor(colorContour);
-			ofFill();	   
-			for (int j=0; j<points.size(); j++) {
-				ofVec3f wp = kinect.getWorldCoordinateAt(points[j].x, points[j].y);
-				ofVec2f pp = kpt.getProjectedPoint(wp);         
-				//draw a circle for each point
-				ofCircle(
-					ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
-					ofMap(pp.y, 0, 1, 0, secondWindow.getHeight()), 8
-					);
+			break;
+		case 4:
+				// lines from center to all ends with function and fewer lines----------------------------------------------------
+			if (contoursOnscreen>0) { 
+				vector<cv::Point> points = contourFinder.getContour(i);
+				ofPoint center = toOf(contourFinder.getCenter(i));
+
+				ofFill();	   
+				ofPoint projectedCenter = projectedPointConvertor(center.x, center.y);
+				ofSetLineWidth(5);
+				ofSetHexColor(colorContour);
+				// from center to all contour
+				for (int j=0; j<points.size(); j=j+100) {
+					ofPoint projectedPoint = projectedPointConvertor(points[j].x, points[j].y);		
+					ofLine(projectedCenter, projectedPoint);
+				}
+				ofSetLineWidth(1);
 			}
+			break;
+		case 5:
+			// (example addapted from https://github.com/genekogan/OF-tools-and-templates/blob/master/Visuals/src/Amoeba.cpp)
+			if (contoursOnscreen>0) { 
+				vector<cv::Point> points = contourFinder.getContour(i);
+				ofPoint center = toOf(contourFinder.getCenter(i));
+				ofPoint projectedCenter = projectedPointConvertor(center.x, center.y);
+				ofVec2f radRange = ofVec2f(0, secondWindow.getWidth()/3);
+				bool curvedVertices = false;
+
+				ofBeginShape();
+				float ang, rad0, rad, x, y;
+				for (int i=0; i<points.size(); i++) {
+					ang = ofMap(i, 0, points.size(), 0, TWO_PI);
+					rad0 = ofNoise(0.0 + 0.07 * i, 0.0 , 0.0);
+					ofPoint projectedPoint = projectedPointConvertor(points[i].x, points[i].y);
+					rad = ofMap(rad0, 0, 1, projectedPoint.x, projectedPoint.y);
+					x = projectedCenter.x + rad * cos(ang);
+					y = projectedCenter.y + rad * sin(ang);
+					if (curvedVertices) ofCurveVertex(x, y);
+					else                ofVertex(x, y);
+				}
+				ofEndShape(true);
+			}
+			break;
+		case 6:
+			// age 
+			//RectTracker& tracker = contourFinder.getTracker();
+			//int label = contourFinder.getLabel(contourSelected);
+			//int age = tracker.getAge(label);
+
+			ofDrawBitmapString("contour age : not implemented", ofPoint(secondWindow.getWidth()/2,secondWindow.getHeight()/2));
+			break;
+
+		case 7:			
+			ofRect(0, 0, secondWindow.getWidth(), secondWindow.getHeight());
+
+			float x, y, w, h;
+			w = secondWindow.getWidth() / 10;
+			h = secondWindow.getHeight() / 10;
+
+			for (int i=0; i<10; i++){
+				for (int j=0; j<10; j++) {
+					if ((i+j)%2==0) continue;
+					x = ofMap(i, 0, 10, 0, secondWindow.getWidth());
+					y = ofMap(j, 0, 10, 0, secondWindow.getHeight());
+					ofRect(x, y, w, h);
+				}
+			}
+			break;
+		case 8:
+			// contour. 2.0
+			if (contoursOnscreen>0) { 
+				vector<cv::Point> points = contourFinder.getContour(i);
+				ofPoint center = toOf(contourFinder.getCenter(i));
+				
+				ofFill();	   
+				ofPoint projectedCenter = projectedPointConvertor(center.x, center.y);
+				ofSetLineWidth(5);
+				ofSetHexColor(colorContour);
+				// from center to all contour
+				for (int j=0; j<points.size(); j=j+100) {
+					ofPoint projectedPoint = projectedPointConvertor(points[j].x, points[j].y);		
+					ofLine(projectedCenter, projectedPoint);
+				}
+				ofSetLineWidth(1);
+			}
+
+			break;
 		}
-		break;
-	case 3:
-		break;
-	case 4:
-		break;
-	case 5:
-		break;
-	case 6:
-		break;
-	case 7:
-		break;
-	case 8:
-		break;
 	}
+}
+
+// this part of code was repeating heavily.
+// takes x,y returns ofPoint
+ofPoint ofApp::projectedPointConvertor(int x,int y){
+	ofVec3f wp = kinect.getWorldCoordinateAt(x, y);
+	ofVec2f pp = kpt.getProjectedPoint(wp);
+	ofPoint projectedPoint = ofPoint(
+		ofMap(pp.x, 0, 1, 0, secondWindow.getWidth()),
+		ofMap(pp.y, 0, 1, 0, secondWindow.getHeight())
+		);
+	return projectedPoint;
 }
 
 void ofApp::drawProj() {
@@ -484,19 +604,20 @@ void ofApp::drawProj() {
 	//ofBackground(v,v,v);
 	ofBackground(0);
 
-	//CV meagic (abracadabric)
+	//CV 
 	RectTracker& tracker = contourFinder.getTracker();
-	
-	//draw contours without debug.
-	if (isContours) { 
-		drawContours(secondWindow.getWidth(),secondWindow.getHeight(),false); 
-	}
 
 	if (isGl) {
 		ofSetColor(255,255,255);  	
 		ofBackground(0);  // needed this for fbo in second window.
 		rgbaFbo.draw(0,0);
 	}
+
+	//draw contours without debug.
+	if (isContours) { 
+		drawContours(secondWindow.getWidth(),secondWindow.getHeight(),false); 
+	}
+
 
 	if (isInteractive) {
 		// draw the moving shape - drawing line is exactly the same wtf (debug)
@@ -654,6 +775,12 @@ void ofApp::keyPressed(int key){
 		break;
 	case 358:
 		contourSelected++;
+		break;
+	case '+':
+		fboTrial++;
+		break;
+	case '-':
+		fboTrial--;
 		break;
 	case 'g':
 		gui->toggleVisible();

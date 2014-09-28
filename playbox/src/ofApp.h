@@ -37,6 +37,7 @@ public:
 	void exit();
 	void keyPressed(int key);
 	void explodeShape();
+	ofPoint projectedPointConvertor(int x, int y); //wtf am I doing.
 	
 
 	ofxSecondWindow             secondWindow;
