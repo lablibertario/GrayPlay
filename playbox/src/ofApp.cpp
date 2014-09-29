@@ -44,7 +44,7 @@ void ofApp::setup() {
 	//flags
 	isProductive=false;
 	isProductive=false;
-	isContours=false;
+	isGrid=false;
 	isGl=true;
 	isCtrlComposite=true;
 	isBroken=true;
@@ -64,10 +64,11 @@ void ofApp::setup() {
 	persistence = 15;
 	maxDistance = 32;
 	preset=1;
-	contourTimer=0;
 	piMultiplier=1.0f;
 	fadeAmnt = 20;
 	fboTrial = 5;
+	smoothFactor=6;
+	spacingFactor=10;
 
     // setup gui that's why (must be a way to set them up directly in the gui hmmmm)
     gui = new ofxUICanvas();
@@ -88,23 +89,24 @@ void ofApp::setup() {
     gui->addSlider("threshold", 1, 100, &threshold);
     gui->addSlider("persistence", 1, 100, &persistence);
     gui->addSlider("maxDistance", 1, 100, &maxDistance);
+	gui->addIntSlider("smoothFactor", 1, 10, &smoothFactor); 
+	gui->addIntSlider("spacingFactor", 1, 10, &spacingFactor); 
 	gui->addSpacer();
 	gui->addLabel("Project");
 	gui->addSlider("preset", 1, 4, &preset); //no ideea how to make a radio button
 	gui->addIntSlider("fbo", 1, 10, &fboTrial); 
-	gui->addLabelToggle("isfboClear", &isFboClear);
 	gui->addSpacer();
 	gui->addLabelToggle("isProductive", &isProductive);
 	gui->addLabelToggle("isCtrlComposite", &isCtrlComposite);
 	gui->addSpacer();
-	gui->addLabelToggle("isContours", &isContours);
+	gui->addLabelToggle("isGrids", &isGrid);
 	gui->addLabelToggle("isInteractive", &isInteractive);
 	gui->addLabelToggle("isGl", &isGl);
+	gui->addLabelToggle("isfboClear", &isFboClear);
 	gui->addSpacer();
 	gui->addLabelToggle("isRaining", &isRaining);
 	gui->addLabelToggle("isBroken", &isBroken);
 	gui->addSpacer();
-	gui->addSlider("contourTimer", 0, 2000, &contourTimer); //how fast to refresh interactive shape
 	gui->addSlider("piMultiplier", 0.0f, 2.0f, &piMultiplier); //how fast to loop through the colors
 	gui->addIntSlider("fadeAmount", 0, 255, &fadeAmnt); //how fast to loop through the colors
 
@@ -138,10 +140,6 @@ void ofApp::setup() {
 
 	//setup projector window
 	secondWindow.setup("main", ofGetScreenWidth(), 0, PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, true);
-
-	//fix this with the pi thingy.
-	timer1 = ofGetElapsedTimeMillis();
-	timer2 = ofGetElapsedTimeMillis();
 
 	//gl
 	//allocate our fbos. 
@@ -209,7 +207,7 @@ void ofApp::update() {
 	ofSetWindowTitle( ofToString( ofGetFrameRate(),1 ) );
 
 	//cleanup
-	ofRemove(circles, shouldRemove);
+	//ofRemove(shapes,shouldRemove); to do
 	ofRemove(boxes, shouldRemove);
 	ofRemove(polyShapes, shouldRemove);
 	
@@ -222,21 +220,21 @@ void ofApp::update() {
 	box2d.update();	
 	
 	// transform slected countour into interactive box2s shapeline ever half a second (UPDATE)
-	if ((isInteractive)&&(contoursOnscreen>0)&&(ofGetElapsedTimeMillis()-timer2>contourTimer)) { 
+	if ((isInteractive)&&(contoursOnscreen>0)) { 
 		vector<cv::Point> points = contourFinder.getContour(contourSelected);
 		movingShapeLine.clear(); 
-
 		for (int j=0; j<points.size(); j++) {
 			movingShapeLine.addVertex(projectedPointConvertor(points[j].x, points[j].y)); 
 		}
+		// movingShapeLine.simplify(); // remove useless vertexes
 
-		movingShapeLine.simplify(); // (fixthis)
+		ofPolyline movingShapeLine2 = movingShapeLine.getResampledBySpacing(spacingFactor); //resample by 10
+		ofPolyline movingShapeLine3 = movingShapeLine2.getSmoothed(smoothFactor); //smooth by 6
 
 		//take the moving shape lines and make a movigshape with it, then create it in the getworld (will be always updated in draw? then again created here my god this is confusing.. anyways)
 		movingShape.clear();
-		movingShape.addVertexes(movingShapeLine);
+		movingShape.addVertexes(movingShapeLine3);
 		movingShape.create(box2d.getWorld());
-		timer2 = ofGetElapsedTimeMillis();
 	}
 
 
@@ -388,8 +386,8 @@ void ofApp::drawContoursDebug() {
 	ofRect(0, 0, 640, 480);
 
 	//projected guidelines
-	for (int j=0; j<640; j=j+30) {
-		for (int i=0; i<480; i=i+30) {
+	for (int j=0; j<640; j=j+40) {
+		for (int i=0; i<480; i=i+40) {
 			ofVec3f wp = kinect.getWorldCoordinateAt(j, i);
 			ofVec2f pp = kpt.getProjectedPoint(wp);         
 			// line from projected point to normal
@@ -444,8 +442,25 @@ void ofApp::drawSelectedShape() {
 	}
 }
 
-void ofApp::drawContours() {
-	ofDrawBitmapString("POLYGON TEST AREA", ofPoint(secondWindow.getWidth()/2,secondWindow.getHeight()/16));
+void ofApp::drawGrid() {
+	
+	ofDrawBitmapString("Grid", ofPoint(secondWindow.getWidth()/2,secondWindow.getHeight()/16));
+	/*ofBackground(0);
+	ofSetColor(255);
+	ofRect(0, 0, secondWindow.getWidth(), secondWindow.getHeight());
+
+			float x, y, w, h;
+			w = secondWindow.getWidth() / 10;
+			h = secondWindow.getHeight() / 10;
+
+			for (int i=0; i<10; i++){
+				for (int j=0; j<10; j++) {
+					if ((i+j)%2==0) continue;
+					x = ofMap(i, 0, 10, 0, secondWindow.getWidth());
+					y = ofMap(j, 0, 10, 0, secondWindow.getHeight());
+					ofRect(x, y, w, h);
+				}
+			}*/
 }
 
 void ofApp::drawFboContours() {		
@@ -603,25 +618,29 @@ void ofApp::drawFboContours() {
 			}
 			break;
 		case 7:			
-				// to do fade using age..
-				//RectTracker& tracker = contourFinder.getTracker();
-				//int label = contourFinder.getLabel(contourSelected);
-				//int age = tracker.getAge(label);
-
-			ofRect(0, 0, secondWindow.getWidth(), secondWindow.getHeight());
-
-			float x, y, w, h;
-			w = secondWindow.getWidth() / 10;
-			h = secondWindow.getHeight() / 10;
-
-			for (int i=0; i<10; i++){
-				for (int j=0; j<10; j++) {
-					if ((i+j)%2==0) continue;
-					x = ofMap(i, 0, 10, 0, secondWindow.getWidth());
-					y = ofMap(j, 0, 10, 0, secondWindow.getHeight());
-					ofRect(x, y, w, h);
+			// to do fade using age..
+			//RectTracker& tracker = contourFinder.getTracker();
+			//int label = contourFinder.getLabel(contourSelected);
+			//int age = tracker.getAge(label);			
+			ofDrawBitmapString("1. Shape 2.0 (via ofPolyline)", ofPoint(secondWindow.getWidth()/2,secondWindow.getHeight()/16));
+			// contour. 2.0
+			if (contoursOnscreen>0) { 
+				vector<cv::Point> points = contourFinder.getContour(i);
+				// fill color loop
+				ofFill();
+				ofSetHexColor(colorContour); 		
+				// shape all points
+				ofPolyline shape20;
+				for (int j=0; j<points.size(); j++) {
+					shape20.addVertex(projectedPointConvertor(points[j].x, points[j].y)); 
 				}
+				ofPolyline shape21 = shape20.getResampledBySpacing(spacingFactor);
+				ofPolyline shape22 = shape21.getSmoothed(smoothFactor);	
+				shape22.close();
+				shape22.simplify();
+				shape22.draw();
 			}
+
 			break;
 		case 8:
 
@@ -649,6 +668,12 @@ void ofApp::drawProj() {
 	//projector
     secondWindow.begin();
 	
+	//draw a grid
+	if (isGrid) { 
+		drawGrid(); 
+	}
+
+
 	//Map value from [-1,1] to [0,255]
 	// float v = ofMap( value, -1, 1, 0, 255 );
 	//background loops
@@ -663,12 +688,6 @@ void ofApp::drawProj() {
 		ofBackground(0);  // needed this for fbo in second window.
 		rgbaFboFloat.draw(0,0);
 	}
-
-	//draw contours 
-	if (isContours) { 
-		drawContours(); 
-	}
-
 
 	if (isInteractive) {
 		// draw the moving shape - drawing line is exactly the same wtf (debug)
@@ -849,7 +868,7 @@ void ofApp::keyPressed(int key){
 		movingShape.clear(); //cleanup leftover from interaction
 		break;
 	case 'u':
-		isContours=!isContours;
+		isGrid=!isGrid;
 		break;
 	case 'y':
 		isGl=!isGl;

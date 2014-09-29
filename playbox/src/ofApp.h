@@ -34,7 +34,7 @@ public:
 	void drawSelectedShape();
 	void drawDebug();
 	void drawProj();
-	void drawContours();
+	void drawGrid();
 	void drawFboContours();
 	
 	void exit();
@@ -64,9 +64,10 @@ public:
 	float                       threshold;
 	float                       persistence;
 	float                       maxDistance;
+	int							smoothFactor,spacingFactor;
 
 	bool						isProductive;
-	bool						isContours;
+	bool						isGrid;
 	bool						isCtrlComposite; //Compile composite image with synced projector in the control panel
 	bool						isBroken;	// break triangles?
 	bool						isRaining; // trhow boxes from the sky
@@ -78,13 +79,7 @@ public:
 	bool						isGl; //opengl tests
 	int							fboTrial; //which way to display fbo (ugly sandbox mode)
 	bool						isFboClear; //fbo trails on off.
-
-	// fix this
-	float						timer1; //used for dropping boxes frequence
-	float						timer2; //used for interactive shape refresh 
-	float						contourTimer; //the actual milisecond value for timer2
 	
-	//trying to fix that
 	float						value; //app wide value betwwen -1 and 1 at interval of 1s
 	float						piMultiplier; //gui amplifier for value
 	float						preset; //preset gui var
