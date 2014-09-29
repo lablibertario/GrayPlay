@@ -30,10 +30,9 @@ F1-F4 | Save current parameters to a file (save preset)
 1-4 | Load parameters from file (load preset)
 p | draw/hide elements in the 1st window (production mode)
 o | draw/hide a debug projection mapping in the control panel 
-u | draw/hide contours
-y | draw/hide fbo tests (gui fboTrial to see al tests)
+i | draw/hide slected contour interactive in 2dBox world
+y | draw/hide fbo tests (gui fboTrial++ to see al tests)
 b | "Breaks" the selected contour into 2dBox physics triangles (explode)
-i | slected contour interactive in 2dBox world
 r | interface "raining" flag makes 2dbox boxes fall from the sky
 c | Clears all 2dbox stuff
 left,right | select countour
@@ -48,8 +47,7 @@ Addons for openframeworks.
 - ofxSecondWindow
 - ofxKinectProjectorToolkit
 - ofxUI
-and
-- ofURLFileLoader 
+and 
 - ofxBox2d 
 - ofxColorGradient
 

@@ -10,7 +10,7 @@ void ofApp::setup() {
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
 
-	 // find all the texture files and load them
+	// find all the texture files and load them
     ofDirectory dir;
     ofDisableArbTex();
     int n = dir.listDir("textures");
