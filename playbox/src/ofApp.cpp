@@ -638,7 +638,15 @@ void ofApp::drawFboContours() {
 				ofPolyline shape22 = shape21.getSmoothed(smoothFactor);	
 				shape22.close();
 				shape22.simplify();
-				shape22.draw();
+				
+				ofBeginShape();
+				vector<ofPoint>& vertices = shape22.getVertices();
+				for(int j = 0; j < vertices.size(); j++) {
+					ofVertex(vertices[j]);
+				}
+				ofEndShape();
+
+				//shape22.draw();
 			}
 
 			break;
