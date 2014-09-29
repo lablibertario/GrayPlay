@@ -1637,6 +1637,9 @@
     <ClInclude Include="..\..\..\addons\ofxColorGradient\src\ofxColorGradient.h">
       <Filter>addons\ofxColorGradient\src</Filter>
     </ClInclude>
+    <ClInclude Include="src\TextureShape.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

@@ -7,9 +7,9 @@
 #include "ofxSecondWindow.h"
 #include "ofxKinectProjectorToolkit.h"
 #include "ofxUI.h"
-#include "ofURLFileLoader.h"
 #include "ofxColorGradient.h"
 #include "ofxBox2d.h"
+#include "TextureShape.h"
 
 // this must match the display resolution of your projector (however, I did not _test_ another resolution)
 #define PROJECTOR_RESOLUTION_X 1360
@@ -30,10 +30,13 @@ public:
 	void update_rain();
 	void draw();
 	void drawCtrl();
+	void drawContoursDebug();
+	void drawSelectedShape();
 	void drawDebug();
 	void drawProj();
-	void drawContours(int width,int height, bool debugProjector);
-	void drawProjSandbox();
+	void drawContours();
+	void drawFboContours();
+	
 	void exit();
 	void keyPressed(int key);
 	void explodeShape();
@@ -74,6 +77,7 @@ public:
 	bool						isGround; //box2d bottom
 	bool						isGl; //opengl tests
 	int							fboTrial; //which way to display fbo (ugly sandbox mode)
+	bool						isFboClear; //fbo trails on off.
 
 	// fix this
 	float						timer1; //used for dropping boxes frequence
@@ -92,11 +96,6 @@ public:
 	ofxColorGradient			gradient;  //color scheme.
 	int							colorDebug, colorContour, colorSelectedContour, colorInteractiveShape, colorBoxes, colorCircles, colorExplodingShape, colorPolishape;
 
-	//will I ever use this?
-	void urlResponse(ofHttpResponse & response);
-	ofImage img;
-	bool loading;
-
 	ofxBox2d                            box2d;						//	the box2d world
 	ofxBox2dEdge                        movingShape;			//	the box2d edge/line shape (min 2 points)
 	ofPolyline							explodingShapeLine;			// for capture and explode
@@ -105,16 +104,22 @@ public:
 	vector	  <ofPtr<ofxBox2dPolygon> >	polyShapes;		  //    pieces of shape maybe eh?
 	vector    <ofPtr<ofxBox2dCircle> >	circles;		  //	default box2d circles
 	vector	  <ofPtr<ofxBox2dRect> >	boxes;			  //	defalut box2d rects
+	vector <ofImage> textures; // a vector of all the texture images
+	vector <ofPtr<TextureShape> > shapes; // a vector of all the texture shapes
 
 	//here goes gl
-	void drawFboContours(); // draws the contours using fbo tail
-
+	
 	//8 bits red, 8 bits green, 8 bits blue, from 0 to 255 in 256 steps
 	ofFbo rgbaFbo; // with alpha
-
 	//32 bits red, 32 bits green, 32 bits blue, from 0 to 1 in 'infinite' steps	
 	ofFbo rgbaFboFloat; // with alpha
 
 	int fadeAmnt;	//the vbo alpha fade thingy
+
+	 //for the spiral (this must be somehow ina class)
+	double a, b; //Angle and its increment
+	ofPoint pos, lastPos; //Current and last drawing position
+	ofColor color; //Drawing color
+	int colorStep; //Counter for color changing
 
 };
