@@ -1,7 +1,7 @@
 ﻿#include "ofApp.h"
 
 static bool shouldRemove(ofPtr<ofxBox2dBaseShape>shape) {
-	return !ofRectangle(0, -200, ofGetWidth(), ofGetHeight()+200).inside(shape.get()->getPosition());
+	return !ofRectangle(0, -200, PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y+200).inside(shape.get()->getPosition());
 }
 
 void ofApp::setup() {
@@ -10,7 +10,7 @@ void ofApp::setup() {
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
 
-	// find all the texture files and load them
+	// box2s rain find all the texture files and load them
     ofDirectory dir;
     ofDisableArbTex();
     int n = dir.listDir("textures");
@@ -19,8 +19,74 @@ void ofApp::setup() {
     }
     printf("%i Textures Loaded\n", (int)textures.size());
 
+	//load masking
+	srcImg.loadImage("A.jpg");
+    dstImg.loadImage("B.jpg");
+    brushImg.loadImage("brush.png");
+    
+	//load shaders for masking
+//#ifdef TARGET_OPENGLES
+//	shader.load("shaders_gles/alphamask.vert","shaders_gles/alphamask.frag");
+//#else
+//	if(ofGetGLProgrammableRenderer()){
+//		string vertex = "#version 150\n\
+//						\n\
+//						uniform mat4 projectionMatrix;\n\
+//						uniform mat4 modelViewMatrix;\n\
+//						uniform mat4 modelViewProjectionMatrix;\n\
+//						\n\
+//						\n\
+//						in vec4  position;\n\
+//						in vec2  texcoord;\n\
+//						\n\
+//						out vec2 texCoordVarying;\n\
+//						\n\
+//						void main()\n\
+//						{\n\
+//						texCoordVarying = texcoord;\
+//						gl_Position = modelViewProjectionMatrix * position;\n\
+//						}";
+//		string fragment = "#version 150\n\
+//						  \n\
+//						  uniform sampler2DRect tex0;\
+//						  uniform sampler2DRect maskTex;\
+//						  in vec2 texCoordVarying;\n\
+//						  \
+//						  out vec4 fragColor;\n\
+//						  void main (void){\
+//						  vec2 pos = texCoordVarying;\
+//						  \
+//						  vec3 src = texture(tex0, pos).rgb;\
+//						  float mask = texture(maskTex, pos).r;\
+//						  \
+//						  fragColor = vec4( src , mask);\
+//						  }";
+//		shader.setupShaderFromSource(GL_VERTEX_SHADER, vertex);
+//		shader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragment);
+//		shader.bindDefaults();
+//		shader.linkProgram();
+//	}else{
+//		string shaderProgram = "#version 120\n \
+//							   #extension GL_ARB_texture_rectangle : enable\n \
+//							   \
+//							   uniform sampler2DRect tex0;\
+//							   uniform sampler2DRect maskTex;\
+//							   \
+//							   void main (void){\
+//							   vec2 pos = gl_TexCoord[0].st;\
+//							   \
+//							   vec3 src = texture2DRect(tex0, pos).rgb;\
+//							   float mask = texture2DRect(maskTex, pos).r;\
+//							   \
+//							   gl_FragColor = vec4( src , mask);\
+//							   }";
+//		shader.setupShaderFromSource(GL_FRAGMENT_SHADER, shaderProgram);
+//		shader.linkProgram();
+//	}
+//#endif
+
 	//coming from box2d
-	ofDisableAntiAliasing();
+	// ofDisableAntiAliasing();
 	ofSetVerticalSync(true);
 	ofSetLogLevel(OF_LOG_NOTICE); //not used but who knows.
 	box2d.init();
@@ -53,6 +119,8 @@ void ofApp::setup() {
 	isExplosion=false;
 	isGround=true;
 	isFboClear=false;
+	bBrushDown=false;
+	isFboTrail=true;
 	
 
 	//default hard coded parameters. why oh why
@@ -103,6 +171,7 @@ void ofApp::setup() {
 	gui->addLabelToggle("isInteractive", &isInteractive);
 	gui->addLabelToggle("isGl", &isGl);
 	gui->addLabelToggle("isfboClear", &isFboClear);
+	gui->addLabelToggle("isfboTrails", &isFboTrail);
 	gui->addSpacer();
 	gui->addLabelToggle("isRaining", &isRaining);
 	gui->addLabelToggle("isBroken", &isBroken);
@@ -143,16 +212,20 @@ void ofApp::setup() {
 
 	//gl
 	//allocate our fbos. 
-	//providing the dimensions and the format for the,
-	rgbaFbo.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA); // with alpha, 8 bits red, 8 bits green, 8 bits blue, 8 bits alpha, from 0 to 255 in 256 steps	
 
-	#ifdef TARGET_OPENGLES
-	rgbaFboFloat.allocate(400, 400, GL_RGBA ); // with alpha, 32 bits red, 32 bits green, 32 bits blue, 32 bits alpha, from 0 to 1 in 'infinite' steps
-        ofLogWarning("ofApp") << "GL_RGBA32F_ARB is not available for OPENGLES.  Using RGBA.";	
-	#else
-        rgbaFboFloat.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA32F_ARB); // with alpha, 32 bits red, 32 bits green, 32 bits blue, 32 bits alpha, from 0 to 1 in 'infinite' steps
-	#endif
+	 rgbaFbo.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA); // with alpha, 8 bits red, 8 bits green, 8 bits blue, 8 bits alpha, from 0 to 255 in 256 steps	
+
+#ifdef TARGET_OPENGLES
+	rgbaFboFloat.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA ); // with alpha, 32 bits red, 32 bits green, 32 bits blue, 32 bits alpha, from 0 to 1 in 'infinite' steps
+	//maskFbo.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y,GL_RGBA); 
+	ofLogWarning("ofApp") << "GL_RGBA32F_ARB is not available for OPENGLES.  Using RGBA.";	
+#else
+	rgbaFboFloat.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA32F_ARB); // with alpha, 32 bits red, 32 bits green, 32 bits blue, 32 bits alpha, from 0 to 1 in 'infinite' steps
+	//maskFbo.allocate(PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y, GL_RGBA32F_ARB); 
+#endif
 	
+	 //fbo.allocate(PROJECTOR_RESOLUTION_X,PROJECTOR_RESOLUTION_Y);
+
 	// we can also define the fbo with ofFbo::Settings.
 	// this allows us so set more advanced options the width (400), the height (200) and the internal format like this
 	/*
@@ -177,6 +250,14 @@ void ofApp::setup() {
 	ofClear(255,255,255, 0);
     rgbaFboFloat.end();
 
+	//maskFbo.begin();
+	//ofClear(0,0,0,255);
+	//maskFbo.end();
+
+	//fbo.begin();
+	//ofClear(0,0,0,255);
+	//fbo.end();
+
 	//for the spiral (must be a class)
 	//Initialize variables
 	a = 0;
@@ -185,11 +266,10 @@ void ofApp::setup() {
 	colorStep = 0;
 }
 
-void ofApp::update() {
 
+void ofApp::update() {
 	//get time to be used for sin functions lateron
 	float time = ofGetElapsedTimef(); 
-
 	//Get periodic value in [-1,1], with wavelength equal to 0.5 seconds
 	value = sin( time * PI * piMultiplier);
 
@@ -208,7 +288,7 @@ void ofApp::update() {
 
 	//cleanup
 	//ofRemove(shapes,shouldRemove); to do
-	ofRemove(boxes, shouldRemove);
+	//ofRemove(boxes, shouldRemove);
 	ofRemove(polyShapes, shouldRemove);
 	
 	// rain
@@ -268,18 +348,24 @@ void ofApp::update() {
 		//get a fresh variable for all those questions about this deep in this cycle
 		contoursOnscreen = contourFinder.size();
 	}
-
-	ofEnableAlphaBlending();
 	
-	//lets draw some graphics into our two fbos (hard to choose).
-    rgbaFbo.begin();
-		drawFboContours();
-    rgbaFbo.end();
-	  	
-    rgbaFboFloat.begin();
-		drawFboContours();
-	rgbaFboFloat.end();
+	if (isGl)	{
+		//if masking do this first
+		//if (fboTrial == 8) {
+		//	maskFbo.begin();
+		//	brushImg.draw(200,200,200,200); // here should be the contour.		
+		//	maskFbo.end();
+		//}
 
+		//lets draw some graphics into our two fbos (hard to choose).
+		rgbaFbo.begin();
+		drawFboContours();
+		rgbaFbo.end();
+
+		rgbaFboFloat.begin();
+		drawFboContours();
+		rgbaFboFloat.end();		
+	}
 }
 
 void ofApp::update_rain(){
@@ -475,10 +561,11 @@ void ofApp::drawFboContours() {
 	//😃 [rolling eyes]
 
 	//drawing a rectangle the size of fba with alpha 
-	
-	ofFill();
-	ofSetColor(255,255,255, fadeAmnt);
-	ofRect(0,0,PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y);
+	if (isFboTrail) {
+		ofFill();
+		ofSetColor(255,255,255, fadeAmnt);
+		ofRect(0,0,PROJECTOR_RESOLUTION_X, PROJECTOR_RESOLUTION_Y);
+	}
 
 	//draw stuff
 	ofNoFill();
@@ -651,7 +738,14 @@ void ofApp::drawFboContours() {
 
 			break;
 		case 8:
+			// Cleaning everthing with alpha mask on 0 in order to make it transparent for default
+			ofClear(0, 0, 0, 0); 
 
+			////masking happens
+			//shader.begin();
+			//shader.setUniformTexture("maskTex", maskFbo.getTextureReference(), 1 );
+			//srcImg.draw(0,0);
+			//shader.end();
 
 			break;
 		}
@@ -681,19 +775,20 @@ void ofApp::drawProj() {
 		drawGrid(); 
 	}
 
-
-	//Map value from [-1,1] to [0,255]
-	// float v = ofMap( value, -1, 1, 0, 255 );
-	//background loops
-	//ofBackground(v,v,v);
 	ofBackground(0);
 
 	//CV 
 	RectTracker& tracker = contourFinder.getTracker();
 
 	if (isGl) {
-		ofSetColor(255,255,255);  	
-		ofBackground(0);  // needed this for fbo in second window.
+		ofSetColor(255,255,255);  
+
+		if (fboTrial == 8) { // if masking draw the src image
+			dstImg.draw(0,0);
+		} else {
+			// dstImg.draw(0,0); 
+			ofBackground(0);  // needed this for fbo in second window.
+		}
 		rgbaFboFloat.draw(0,0);
 	}
 

@@ -78,7 +78,8 @@ public:
 	bool						isGround; //box2d bottom
 	bool						isGl; //opengl tests
 	int							fboTrial; //which way to display fbo (ugly sandbox mode)
-	bool						isFboClear; //fbo trails on off.
+	bool						isFboClear; //fbo clears
+	bool						isFboTrail; //fbi trails
 	
 	float						value; //app wide value betwwen -1 and 1 at interval of 1s
 	float						piMultiplier; //gui amplifier for value
@@ -116,5 +117,17 @@ public:
 	ofPoint pos, lastPos; //Current and last drawing position
 	ofColor color; //Drawing color
 	int colorStep; //Counter for color changing
+
+	//masking contour
+	ofImage     srcImg;
+    ofImage     dstImg;
+    ofImage     brushImg;
+    
+    ofFbo       maskFbo;
+    ofFbo       fbo;
+    
+    ofShader    shader;
+    
+    bool        bBrushDown;
 
 };
