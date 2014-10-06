@@ -266,7 +266,6 @@ void ofApp::setup() {
 	colorStep = 0;
 }
 
-
 void ofApp::update() {
 	//get time to be used for sin functions lateron
 	float time = ofGetElapsedTimef(); 
@@ -1014,6 +1013,32 @@ void ofApp::keyPressed(int key){
 		preset=4;
 		break;
 
+	case '5':
+		gui->loadSettings("gui5.xml");
+		preset=5;
+		break;
+
+	case '6':
+		gui->loadSettings("gui6.xml");
+		preset=6;
+		break;
+
+	case '7':
+		gui->loadSettings("gui7.xml");
+		preset=7;
+		break;
+
+	case '8':
+		gui->loadSettings("gui8.xml");
+		preset=8;
+		break;
+
+	case '9':
+		gui->loadSettings("gui9.xml");
+		preset=9;
+		break;
+
+
 	case OF_KEY_F1:
 		gui->saveSettings("gui1.xml");
 		break;
@@ -1028,6 +1053,26 @@ void ofApp::keyPressed(int key){
 
 	case OF_KEY_F4:
 		gui->saveSettings("gui4.xml");
+		break;
+
+	case OF_KEY_F5:
+		gui->saveSettings("gui5.xml");
+		break;
+
+	case OF_KEY_F6:
+		gui->saveSettings("gui6.xml");
+		break;
+
+	case OF_KEY_F7:
+		gui->saveSettings("gui7.xml");
+		break;
+
+	case OF_KEY_F8:
+		gui->saveSettings("gui8.xml");
+		break;
+
+	case OF_KEY_F9:
+		gui->saveSettings("gui9.xml");
 		break;
 
 	default:
